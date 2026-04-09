@@ -24,5 +24,9 @@ def fetch_satellite_image() -> None:
     save_payloads(CWAService().fetch_satellite())
 
 
+def fetch_radar_image() -> None:
+    save_payloads(CWAService().fetch_radar())
+
+
 def bootstrap_images() -> None:
     fetch_all_images()

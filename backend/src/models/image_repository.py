@@ -36,6 +36,28 @@ def get_latest_image(image_type: str) -> dict[str, Any] | None:
     return dict(row) if row else None
 
 
+def get_latest_image_excluding_prefixes(image_type: str, excluded_prefixes: list[str]) -> dict[str, Any] | None:
+    where_parts = ["image_type = ?"]
+    params: list[Any] = [image_type]
+
+    for prefix in excluded_prefixes:
+        where_parts.append("image_url NOT LIKE ?")
+        params.append(f"{prefix}%")
+
+    with get_connection() as conn:
+        row = conn.execute(
+            f"""
+            SELECT *
+            FROM images
+            WHERE {' AND '.join(where_parts)}
+            ORDER BY fetched_at DESC
+            LIMIT 1
+            """,
+            params,
+        ).fetchone()
+    return dict(row) if row else None
+
+
 def get_image_history(image_type: str, limit: int = 20) -> list[dict[str, Any]]:
     with get_connection() as conn:
         rows = conn.execute(
