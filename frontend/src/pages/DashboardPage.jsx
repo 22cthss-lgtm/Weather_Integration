@@ -6,7 +6,7 @@ const categories = [
   { key: "satellite", label: "Satellite" },
   { key: "radar", label: "Radar" },
   { key: "aqi", label: "AQI" },
-  { key: "ohc", label: "OHC" },
+  { key: "sst", label: "SST" },
   { key: "reservoir", label: "Reservoir" },
 ];
 
@@ -39,6 +39,7 @@ export default function DashboardPage() {
             <article className="card" key={category.key}>
               <h3>{category.label}</h3>
               {card ? <img src={card.image_url} alt={card.title} /> : <p>Loading...</p>}
+              {card ? <p className="card-meta">Fetched At: {card.fetched_at}</p> : null}
               <Link to={`/images/${category.key}`}>View latest</Link>
             </article>
           );

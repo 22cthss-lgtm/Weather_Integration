@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from ..jobs import fetch_radar_image, fetch_satellite_image
+from ..jobs import fetch_radar_image, fetch_satellite_image, fetch_sst_image
 from ..models.image_repository import get_image_history, get_latest_image, get_latest_image_excluding_prefixes
 
 
@@ -17,6 +17,8 @@ def latest_image():
         fetch_satellite_image()
     elif image_type == "radar":
         fetch_radar_image()
+    elif image_type == "sst":
+        fetch_sst_image()
 
     if image_type == "radar":
         image = get_latest_image_excluding_prefixes(image_type, ["https://placehold.co/"])
