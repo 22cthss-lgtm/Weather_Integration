@@ -22,13 +22,34 @@ class CWAService(BaseImageService):
     radar_image_pattern = "CV1_3600_{timestamp}.png"
     radar_data_regex = re.compile(r"""0:\{"img":'(?P<filename>CV1_3600_(?P<timestamp>\d{12})\.png)',\s*'text':'(?P<text>\d{4}/\d{2}/\d{2} \d{2}:\d{2})'\}""")
     radar_image_regex = re.compile(r"(?:https://www\.cwa\.gov\.tw)?(/Data/radar/CV1_3600_(\d{12})\.png)")
+    temperature_source_url = "https://www.cwa.gov.tw/V8/C/W/OBS_Temp.html"
+    temperature_image_prefix = "https://www.cwa.gov.tw/Data/temperature"
+    temperature_image_pattern = "{timestamp}.GTP8w.jpg"
+    temperature_image_regex = re.compile(
+        r"(?:https://www\.cwa\.gov\.tw)?(?P<path>/Data/temperature/(?P<timestamp>\d{4}-\d{2}-\d{2}_\d{4})\.GTP8w\.jpg)"
+    )
     satellite_timezone = ZoneInfo("Asia/Taipei")
     satellite_publish_delay_minutes = 30
     radar_publish_delay_minutes = 20
+    temperature_publish_delay_minutes = 20
+
+    @staticmethod
+    def no_cache_headers() -> dict[str, str]:
+        return {
+            "Cache-Control": "no-cache, no-store, max-age=0",
+            "Pragma": "no-cache",
+        }
 
     def image_exists(self, image_url: str) -> bool:
         try:
-            response = requests.get(image_url, timeout=5, stream=True)
+            response = requests.get(
+                image_url,
+                timeout=5,
+                stream=True,
+                headers=self.no_cache_headers(),
+                params={"_": datetime.now(self.satellite_timezone).timestamp()},
+                verify=False,
+            )
             exists = response.ok
             response.close()
             return exists
@@ -49,8 +70,10 @@ class CWAService(BaseImageService):
         for offset in range(0, 360, 10):
             candidate_time = rounded_now - timedelta(minutes=offset)
             timestamp = candidate_time.strftime("%Y%m%d%H%M")
-            if "-" in image_pattern:
+            if image_pattern == self.satellite_image_pattern:
                 timestamp = candidate_time.strftime("%Y-%m-%d-%H-%M")
+            elif image_pattern == self.temperature_image_pattern:
+                timestamp = candidate_time.strftime("%Y-%m-%d_%H%M")
 
             filename = image_pattern.format(timestamp=timestamp)
             image_url = f"{image_prefix}/{filename}"
@@ -127,9 +150,50 @@ class CWAService(BaseImageService):
             self.radar_source_url,
         )
 
+    def resolve_temperature_image_url(self) -> tuple[str, str] | None:
+        try:
+            response = requests.get(
+                self.temperature_source_url,
+                timeout=10,
+                headers=self.no_cache_headers(),
+                params={"_": datetime.now(self.satellite_timezone).timestamp()},
+                verify=False,
+            )
+            response.raise_for_status()
+            match = self.temperature_image_regex.search(response.text)
+            if match:
+                image_url = f"{self.cwa_base_url}{match.group('path')}"
+                timestamp = datetime.strptime(match.group("timestamp"), "%Y-%m-%d_%H%M").replace(
+                    tzinfo=self.satellite_timezone
+                )
+                display_time = timestamp.strftime("%Y-%m-%d %H:%M")
+                return image_url, display_time
+        except requests.RequestException:
+            pass
+
+        return self.resolve_latest_image(
+            image_prefix=self.temperature_image_prefix,
+            image_pattern=self.temperature_image_pattern,
+            publish_delay_minutes=self.temperature_publish_delay_minutes,
+        )
+
+    def fetch_temperature(self):
+        resolved = self.resolve_temperature_image_url()
+        if resolved is None:
+            return
+
+        image_url, display_time = resolved
+        yield self.build_payload(
+            "temperature",
+            f"CWA Temperature Distribution {display_time}",
+            image_url,
+            self.temperature_source_url,
+        )
+
     def fetch(self):
         yield from self.fetch_satellite()
         yield from self.fetch_radar()
+        yield from self.fetch_temperature()
 
         items = [
             (

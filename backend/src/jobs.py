@@ -29,6 +29,10 @@ def fetch_radar_image() -> None:
     save_payloads(CWAService().fetch_radar())
 
 
+def fetch_temperature_image() -> None:
+    save_payloads(CWAService().fetch_temperature())
+
+
 def fetch_sst_image() -> None:
     save_payloads(OceanService().fetch_sst())
 

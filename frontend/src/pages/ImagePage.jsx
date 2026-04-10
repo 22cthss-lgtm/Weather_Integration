@@ -32,7 +32,7 @@ export default function ImagePage() {
     <section>
       <h2>{image.title}</h2>
       <p>Source: {image.source}</p>
-      <p>Fetched At: {image.fetched_at}</p>
+      <p>{image.image_time ? `Image Time: ${image.image_time}` : `Fetched At: ${image.fetched_at}`}</p>
       <img className="detail-image" src={image.image_url} alt={image.title} />
       <p>
         <a href={image.source_url} target="_blank" rel="noreferrer">

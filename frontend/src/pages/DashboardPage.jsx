@@ -5,6 +5,7 @@ import { fetchLatestImage } from "../api";
 const categories = [
   { key: "satellite", label: "Satellite" },
   { key: "radar", label: "Radar" },
+  { key: "temperature", label: "Temperature" },
   { key: "aqi", label: "AQI" },
   { key: "sst", label: "SST" },
   { key: "reservoir", label: "Reservoir" },
@@ -39,7 +40,11 @@ export default function DashboardPage() {
             <article className="card" key={category.key}>
               <h3>{category.label}</h3>
               {card ? <img src={card.image_url} alt={card.title} /> : <p>Loading...</p>}
-              {card ? <p className="card-meta">Fetched At: {card.fetched_at}</p> : null}
+              {card ? (
+                <p className="card-meta">
+                  {card.image_time ? `Image Time: ${card.image_time}` : `Fetched At: ${card.fetched_at}`}
+                </p>
+              ) : null}
               <Link to={`/images/${category.key}`}>View latest</Link>
             </article>
           );
