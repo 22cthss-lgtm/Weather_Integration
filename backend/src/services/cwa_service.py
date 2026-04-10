@@ -28,10 +28,17 @@ class CWAService(BaseImageService):
     temperature_image_regex = re.compile(
         r"(?:https://www\.cwa\.gov\.tw)?(?P<path>/Data/temperature/(?P<timestamp>\d{4}-\d{2}-\d{2}_\d{4})\.GTP8w\.jpg)"
     )
+    rainfall_source_url = "https://www.cwa.gov.tw/V8/C/P/Rainfall/Rainfall_QZJ.html"
+    rainfall_image_prefix = "https://www.cwa.gov.tw/Data/rainfall"
+    rainfall_image_pattern = "{timestamp}.QZJ8.jpg"
+    rainfall_image_regex = re.compile(
+        r"(?:https://www\.cwa\.gov\.tw)?(?P<path>/Data/rainfall/(?P<timestamp>\d{4}-\d{2}-\d{2}_\d{4})\.QZJ8\.jpg)"
+    )
     satellite_timezone = ZoneInfo("Asia/Taipei")
     satellite_publish_delay_minutes = 30
     radar_publish_delay_minutes = 20
     temperature_publish_delay_minutes = 20
+    rainfall_publish_delay_minutes = 20
 
     @staticmethod
     def no_cache_headers() -> dict[str, str]:
@@ -72,7 +79,7 @@ class CWAService(BaseImageService):
             timestamp = candidate_time.strftime("%Y%m%d%H%M")
             if image_pattern == self.satellite_image_pattern:
                 timestamp = candidate_time.strftime("%Y-%m-%d-%H-%M")
-            elif image_pattern == self.temperature_image_pattern:
+            elif image_pattern in (self.temperature_image_pattern, self.rainfall_image_pattern):
                 timestamp = candidate_time.strftime("%Y-%m-%d_%H%M")
 
             filename = image_pattern.format(timestamp=timestamp)
@@ -190,22 +197,57 @@ class CWAService(BaseImageService):
             self.temperature_source_url,
         )
 
+    def resolve_rainfall_image_url(self) -> tuple[str, str] | None:
+        try:
+            response = requests.get(
+                self.rainfall_source_url,
+                timeout=10,
+                headers=self.no_cache_headers(),
+                params={"_": datetime.now(self.satellite_timezone).timestamp()},
+                verify=False,
+            )
+            response.raise_for_status()
+            match = self.rainfall_image_regex.search(response.text)
+            if match:
+                image_url = f"{self.cwa_base_url}{match.group('path')}"
+                timestamp = datetime.strptime(match.group("timestamp"), "%Y-%m-%d_%H%M").replace(
+                    tzinfo=self.satellite_timezone
+                )
+                display_time = timestamp.strftime("%Y-%m-%d %H:%M")
+                return image_url, display_time
+        except requests.RequestException:
+            pass
+
+        return self.resolve_latest_image(
+            image_prefix=self.rainfall_image_prefix,
+            image_pattern=self.rainfall_image_pattern,
+            publish_delay_minutes=self.rainfall_publish_delay_minutes,
+        )
+
+    def fetch_rainfall(self):
+        resolved = self.resolve_rainfall_image_url()
+        if resolved is None:
+            return
+
+        image_url, display_time = resolved
+        yield self.build_payload(
+            "rainfall",
+            f"CWA Accumulated Rainfall {display_time}",
+            image_url,
+            self.rainfall_source_url,
+        )
+
     def fetch(self):
         yield from self.fetch_satellite()
         yield from self.fetch_radar()
         yield from self.fetch_temperature()
+        yield from self.fetch_rainfall()
 
         items = [
             (
                 "weather_chart",
                 "CWA Weather Chart",
                 "https://placehold.co/900x600?text=CWA+Weather+Chart",
-                "https://www.cwa.gov.tw/",
-            ),
-            (
-                "rainfall",
-                "CWA Accumulated Rainfall",
-                "https://placehold.co/900x600?text=CWA+Rainfall",
                 "https://www.cwa.gov.tw/",
             ),
         ]

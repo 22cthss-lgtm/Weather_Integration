@@ -6,6 +6,7 @@ const categories = [
   { key: "satellite", label: "Satellite" },
   { key: "radar", label: "Radar" },
   { key: "temperature", label: "Temperature" },
+  { key: "rainfall", label: "累積雨量" },
   { key: "aqi", label: "AQI" },
   { key: "sst", label: "SST" },
   { key: "reservoir", label: "Reservoir" },
