@@ -1,6 +1,8 @@
 from .models.image_repository import insert_image
 from .services.cwa_service import CWAService
+from .services.kma_service import KMAService
 from .services.ocean_service import OceanService
+from .models.image_repository import get_latest_image
 from .services.registry import get_services
 
 
@@ -39,6 +41,24 @@ def fetch_rainfall_image() -> None:
 
 def fetch_sst_image() -> None:
     save_payloads(OceanService().fetch_sst())
+
+
+def fetch_850hpa_image() -> None:
+    latest_image = get_latest_image("850hpa")
+    payloads = list(KMAService().fetch_850hpa())
+
+    for payload in payloads:
+        if latest_image and latest_image["image_url"] == payload.image_url:
+            continue
+
+        insert_image(
+            image_type=payload.image_type,
+            source=payload.source,
+            title=payload.title,
+            image_url=payload.image_url,
+            source_url=payload.source_url,
+            fetched_at=payload.fetched_at,
+        )
 
 
 def bootstrap_images() -> None:

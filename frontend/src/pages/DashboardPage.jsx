@@ -5,6 +5,7 @@ import { fetchLatestImage } from "../api";
 const categories = [
   { key: "satellite", label: "Satellite" },
   { key: "radar", label: "Radar" },
+  { key: "850hpa", label: "KMA 850hPa" },
   { key: "temperature", label: "Temperature" },
   { key: "rainfall", label: "累積雨量" },
   { key: "aqi", label: "AQI" },
