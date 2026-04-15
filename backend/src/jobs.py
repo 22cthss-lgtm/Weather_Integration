@@ -39,6 +39,10 @@ def fetch_rainfall_image() -> None:
     save_payloads(CWAService().fetch_rainfall())
 
 
+def fetch_weather_chart_image() -> None:
+    save_payloads(CWAService().fetch_weather_chart())
+
+
 def fetch_sst_image() -> None:
     save_payloads(OceanService().fetch_sst())
 

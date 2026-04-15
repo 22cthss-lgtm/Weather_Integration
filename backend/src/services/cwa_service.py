@@ -34,6 +34,11 @@ class CWAService(BaseImageService):
     rainfall_image_regex = re.compile(
         r"(?:https://www\.cwa\.gov\.tw)?(?P<path>/Data/rainfall/(?P<timestamp>\d{4}-\d{2}-\d{2}_\d{4})\.QZJ8\.jpg)"
     )
+    weather_chart_source_url = "https://www.cwa.gov.tw/V8/C/W/analysis.html"
+    weather_chart_image_url = "https://www.cwa.gov.tw/Data/fcst_img/FI04.png"
+    weather_chart_image_regex = re.compile(
+        r"(?:https://www\.cwa\.gov\.tw)?(?P<path>/Data/fcst_img/FI04\.png\?t=(?P<timestamp>\d{10}-\d+))"
+    )
     satellite_timezone = ZoneInfo("Asia/Taipei")
     satellite_publish_delay_minutes = 30
     radar_publish_delay_minutes = 20
@@ -237,20 +242,58 @@ class CWAService(BaseImageService):
             self.rainfall_source_url,
         )
 
+    def resolve_direct_weather_chart_image_url(self) -> tuple[str, str | None] | None:
+        cache_bust = str(int(datetime.now(self.satellite_timezone).timestamp()))
+        image_url = f"{self.weather_chart_image_url}?t={cache_bust}"
+
+        if not self.image_exists(image_url):
+            return None
+
+        return image_url, None
+
+    def resolve_weather_chart_image_url(self) -> tuple[str, str | None] | None:
+        try:
+            response = requests.get(
+                self.weather_chart_source_url,
+                timeout=10,
+                headers=self.no_cache_headers(),
+                params={"_": datetime.now(self.satellite_timezone).timestamp()},
+                verify=False,
+            )
+            response.raise_for_status()
+            match = self.weather_chart_image_regex.search(response.text)
+            if match:
+                image_url = f"{self.cwa_base_url}{match.group('path')}"
+                timestamp = datetime.strptime(match.group("timestamp").split("-")[0], "%Y%m%d%H").replace(
+                    tzinfo=self.satellite_timezone
+                )
+                display_time = timestamp.strftime("%Y-%m-%d %H:00")
+                return image_url, display_time
+        except requests.RequestException:
+            pass
+
+        return self.resolve_direct_weather_chart_image_url()
+
+    def fetch_weather_chart(self):
+        resolved = self.resolve_weather_chart_image_url()
+        if resolved is None:
+            return
+
+        image_url, display_time = resolved
+        title = "CWA Surface Weather Chart"
+        if display_time:
+            title = f"{title} {display_time}"
+
+        yield self.build_payload(
+            "weather_chart",
+            title,
+            image_url,
+            self.weather_chart_source_url,
+        )
+
     def fetch(self):
         yield from self.fetch_satellite()
         yield from self.fetch_radar()
         yield from self.fetch_temperature()
         yield from self.fetch_rainfall()
-
-        items = [
-            (
-                "weather_chart",
-                "CWA Weather Chart",
-                "https://placehold.co/900x600?text=CWA+Weather+Chart",
-                "https://www.cwa.gov.tw/",
-            ),
-        ]
-        for image_type, title, image_url, source_url in items:
-            self.request_placeholder(image_url)
-            yield self.build_payload(image_type, title, image_url, source_url)
+        yield from self.fetch_weather_chart()
