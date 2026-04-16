@@ -7,6 +7,7 @@ from ..jobs import (
     fetch_850hpa_image,
     fetch_radar_image,
     fetch_rainfall_image,
+    fetch_seaice_images,
     fetch_satellite_image,
     fetch_sst_image,
     fetch_temperature_image,
@@ -18,7 +19,16 @@ from ..models.image_repository import get_image_history, get_latest_image, get_l
 
 images_bp = Blueprint("images", __name__)
 image_time_regex = re.compile(r"(?P<image_time>\d{4}-\d{2}-\d{2} \d{2}:\d{2})$")
-image_types_with_embedded_time = {"temperature", "rainfall", "850hpa", "weather_chart", "tchp"}
+image_types_with_embedded_time = {
+    "temperature",
+    "rainfall",
+    "850hpa",
+    "weather_chart",
+    "tchp",
+    "seaice_extent",
+    "seaice_concentration",
+    "seaice_timeseries",
+}
 
 
 def serialize_image(image: dict) -> dict:
@@ -31,6 +41,29 @@ def serialize_image(image: dict) -> dict:
             fetched_at = datetime.fromisoformat(serialized["fetched_at"])
             serialized["image_time"] = fetched_at.strftime("%Y-%m-%d %H:%M")
     return serialized
+
+
+def serialize_seaice_payload() -> dict | None:
+    extent = get_latest_image("seaice_extent")
+    concentration = get_latest_image("seaice_concentration")
+    timeseries = get_latest_image("seaice_timeseries")
+    images = [extent, concentration, timeseries]
+
+    if any(image is None for image in images):
+        return None
+
+    serialized_images = [serialize_image(image) for image in images if image is not None]
+    primary_image = serialized_images[0]
+    return {
+        "image_type": "seaice",
+        "source": "NSIDC",
+        "title": primary_image["title"],
+        "image_url": primary_image["image_url"],
+        "source_url": primary_image["source_url"],
+        "fetched_at": primary_image["fetched_at"],
+        "image_time": primary_image.get("image_time"),
+        "images": serialized_images,
+    }
 
 
 @images_bp.get("/latest")
@@ -55,6 +88,14 @@ def latest_image():
         fetch_sst_image()
     elif image_type == "850hpa":
         fetch_850hpa_image()
+    elif image_type == "seaice":
+        fetch_seaice_images()
+
+    if image_type == "seaice":
+        image = serialize_seaice_payload()
+        if image is None:
+            return jsonify({"error": "Image type not found."}), 404
+        return jsonify(image)
 
     if image_type == "radar":
         image = get_latest_image_excluding_prefixes(image_type, ["https://placehold.co/"])

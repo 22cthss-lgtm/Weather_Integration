@@ -1,6 +1,7 @@
 from .models.image_repository import insert_image
 from .services.cwa_service import CWAService
 from .services.kma_service import KMAService
+from .services.nsidc_service import NSIDCService
 from .services.ocean_service import OceanService
 from .models.image_repository import get_latest_image
 from .services.registry import get_services
@@ -49,6 +50,10 @@ def fetch_tchp_image() -> None:
 
 def fetch_sst_image() -> None:
     save_payloads(OceanService().fetch_sst())
+
+
+def fetch_seaice_images() -> None:
+    save_payloads(NSIDCService().fetch())
 
 
 def fetch_850hpa_image() -> None:

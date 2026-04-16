@@ -55,6 +55,16 @@ nav {
   gap: 24px;
 }
 
+.image-collection {
+  display: grid;
+  gap: 24px;
+}
+
+.image-panel {
+  border: 1px solid #ccc;
+  padding: 12px;
+}
+
 @media (max-width: 768px) {
   .docs-layout {
     grid-template-columns: 1fr;

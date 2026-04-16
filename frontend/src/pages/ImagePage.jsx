@@ -28,6 +28,29 @@ export default function ImagePage() {
     return <p>Loading...</p>;
   }
 
+  if (type === "seaice" && Array.isArray(image.images)) {
+    return (
+      <section>
+        <h2>NSIDC Sea Ice</h2>
+        <p>Source: {image.source}</p>
+        <div className="image-collection">
+          {image.images.map((entry) => (
+            <article className="image-panel" key={entry.image_type}>
+              <h3>{entry.title}</h3>
+              <p>{entry.image_time ? `Image Time: ${entry.image_time}` : `Fetched At: ${entry.fetched_at}`}</p>
+              <img className="detail-image" src={entry.image_url} alt={entry.title} />
+            </article>
+          ))}
+        </div>
+        <p>
+          <a href={image.source_url} target="_blank" rel="noreferrer">
+            Original source
+          </a>
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section>
       <h2>{image.title}</h2>
