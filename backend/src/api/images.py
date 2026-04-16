@@ -10,6 +10,7 @@ from ..jobs import (
     fetch_satellite_image,
     fetch_sst_image,
     fetch_temperature_image,
+    fetch_tchp_image,
     fetch_weather_chart_image,
 )
 from ..models.image_repository import get_image_history, get_latest_image, get_latest_image_excluding_prefixes
@@ -17,7 +18,7 @@ from ..models.image_repository import get_image_history, get_latest_image, get_l
 
 images_bp = Blueprint("images", __name__)
 image_time_regex = re.compile(r"(?P<image_time>\d{4}-\d{2}-\d{2} \d{2}:\d{2})$")
-image_types_with_embedded_time = {"temperature", "rainfall", "850hpa", "weather_chart"}
+image_types_with_embedded_time = {"temperature", "rainfall", "850hpa", "weather_chart", "tchp"}
 
 
 def serialize_image(image: dict) -> dict:
@@ -48,6 +49,8 @@ def latest_image():
         fetch_rainfall_image()
     elif image_type == "weather_chart":
         fetch_weather_chart_image()
+    elif image_type == "tchp":
+        fetch_tchp_image()
     elif image_type == "sst":
         fetch_sst_image()
     elif image_type == "850hpa":

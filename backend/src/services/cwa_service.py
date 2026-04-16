@@ -39,6 +39,10 @@ class CWAService(BaseImageService):
     weather_chart_image_regex = re.compile(
         r"(?:https://www\.cwa\.gov\.tw)?(?P<path>/Data/fcst_img/FI04\.png\?t=(?P<timestamp>\d{10}-\d+))"
     )
+    tchp_data_url = "https://www.cwa.gov.tw/Data/js/TDD_TCHP.js"
+    tchp_image_regex = re.compile(
+        r"""var\s+TDD_TCHP\s*=\s*['"](?P<filename>(?P<date>\d{4}-\d{2}-\d{2})_TCHP_[^'"]+\.png)['"]"""
+    )
     satellite_timezone = ZoneInfo("Asia/Taipei")
     satellite_publish_delay_minutes = 30
     radar_publish_delay_minutes = 20
@@ -291,9 +295,45 @@ class CWAService(BaseImageService):
             self.weather_chart_source_url,
         )
 
+    def resolve_tchp_image_url(self) -> tuple[str, str] | None:
+        try:
+            response = requests.get(
+                self.tchp_data_url,
+                timeout=10,
+                headers=self.no_cache_headers(),
+                params={"_": datetime.now(self.satellite_timezone).timestamp()},
+                verify=False,
+            )
+            response.raise_for_status()
+            match = self.tchp_image_regex.search(response.text)
+            if match:
+                cache_bust = str(int(datetime.now(self.satellite_timezone).timestamp()))
+                image_url = f"{self.cwa_base_url}/Data/TCHP/{match.group('filename')}?T={cache_bust}"
+                image_date = datetime.strptime(match.group("date"), "%Y-%m-%d").replace(tzinfo=self.satellite_timezone)
+                display_time = image_date.strftime("%Y-%m-%d 00:00")
+                return image_url, display_time
+        except requests.RequestException:
+            pass
+
+        return None
+
+    def fetch_tchp(self):
+        resolved = self.resolve_tchp_image_url()
+        if resolved is None:
+            return
+
+        image_url, display_time = resolved
+        yield self.build_payload(
+            "tchp",
+            f"CWA TCHP {display_time}",
+            image_url,
+            self.weather_chart_source_url,
+        )
+
     def fetch(self):
         yield from self.fetch_satellite()
         yield from self.fetch_radar()
         yield from self.fetch_temperature()
         yield from self.fetch_rainfall()
         yield from self.fetch_weather_chart()
+        yield from self.fetch_tchp()

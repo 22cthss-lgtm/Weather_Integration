@@ -9,6 +9,7 @@ const categories = [
   { key: "temperature", label: "Temperature" },
   { key: "rainfall", label: "Rainfall" },
   { key: "weather_chart", label: "CWA Surface Chart" },
+  { key: "tchp", label: "CWA TCHP" },
   { key: "aqi", label: "AQI" },
   { key: "sst", label: "SST" },
   { key: "reservoir", label: "Reservoir" },
