@@ -1,3 +1,4 @@
+from .services.cimss_service import CIMSSService
 from .models.image_repository import insert_image
 from .services.cwa_service import CWAService
 from .services.kma_service import KMAService
@@ -58,6 +59,10 @@ def fetch_seaice_images() -> None:
 
 def fetch_seaice_antarctic_images() -> None:
     save_payloads(NSIDCService().fetch())
+
+
+def fetch_cimss_wind_analysis_images() -> None:
+    save_payloads(CIMSSService().fetch_wind_analysis())
 
 
 def fetch_850hpa_image() -> None:

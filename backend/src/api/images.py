@@ -4,6 +4,7 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 
 from ..jobs import (
+    fetch_cimss_wind_analysis_images,
     fetch_850hpa_image,
     fetch_radar_image,
     fetch_rainfall_image,
@@ -32,6 +33,8 @@ image_types_with_embedded_time = {
     "seaice_antarctic_extent",
     "seaice_antarctic_concentration",
     "seaice_antarctic_timeseries",
+    "cimss_wind_shear",
+    "cimss_850mb_vorticity",
 }
 
 
@@ -87,6 +90,14 @@ def serialize_seaice_antarctic_payload() -> dict | None:
     )
 
 
+def serialize_cimss_wind_analysis_payload() -> dict | None:
+    return serialize_grouped_payload(
+        aggregate_type="cimss_wind_analysis",
+        source="CIMSS",
+        image_types=["cimss_wind_shear", "cimss_850mb_vorticity"],
+    )
+
+
 @images_bp.get("/latest")
 def latest_image():
     image_type = request.args.get("type", "").strip()
@@ -113,6 +124,8 @@ def latest_image():
         fetch_seaice_images()
     elif image_type == "seaice_antarctic":
         fetch_seaice_antarctic_images()
+    elif image_type == "cimss_wind_analysis":
+        fetch_cimss_wind_analysis_images()
 
     if image_type == "seaice":
         image = serialize_seaice_payload()
@@ -121,6 +134,11 @@ def latest_image():
         return jsonify(image)
     if image_type == "seaice_antarctic":
         image = serialize_seaice_antarctic_payload()
+        if image is None:
+            return jsonify({"error": "Image type not found."}), 404
+        return jsonify(image)
+    if image_type == "cimss_wind_analysis":
+        image = serialize_cimss_wind_analysis_payload()
         if image is None:
             return jsonify({"error": "Image type not found."}), 404
         return jsonify(image)

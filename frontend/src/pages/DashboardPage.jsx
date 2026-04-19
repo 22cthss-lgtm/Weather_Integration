@@ -10,6 +10,7 @@ const categories = [
   { key: "rainfall", label: "Rainfall" },
   { key: "weather_chart", label: "CWA Surface Chart" },
   { key: "tchp", label: "CWA TCHP" },
+  { key: "cimss_wind_analysis", label: "CIMSS / Wind Analysis" },
   { key: "seaice", label: "NSIDC Sea Ice Extent" },
   { key: "seaice_antarctic", label: "NSIDC Antarctic Sea Ice Extent" },
   { key: "aqi", label: "AQI" },
