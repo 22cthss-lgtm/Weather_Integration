@@ -7,6 +7,7 @@ from ..jobs import (
     fetch_850hpa_image,
     fetch_radar_image,
     fetch_rainfall_image,
+    fetch_seaice_antarctic_images,
     fetch_seaice_images,
     fetch_satellite_image,
     fetch_sst_image,
@@ -28,6 +29,9 @@ image_types_with_embedded_time = {
     "seaice_extent",
     "seaice_concentration",
     "seaice_timeseries",
+    "seaice_antarctic_extent",
+    "seaice_antarctic_concentration",
+    "seaice_antarctic_timeseries",
 }
 
 
@@ -44,10 +48,15 @@ def serialize_image(image: dict) -> dict:
 
 
 def serialize_seaice_payload() -> dict | None:
-    extent = get_latest_image("seaice_extent")
-    concentration = get_latest_image("seaice_concentration")
-    timeseries = get_latest_image("seaice_timeseries")
-    images = [extent, concentration, timeseries]
+    return serialize_grouped_payload(
+        aggregate_type="seaice",
+        source="NSIDC",
+        image_types=["seaice_extent", "seaice_concentration", "seaice_timeseries"],
+    )
+
+
+def serialize_grouped_payload(*, aggregate_type: str, source: str, image_types: list[str]) -> dict | None:
+    images = [get_latest_image(image_type) for image_type in image_types]
 
     if any(image is None for image in images):
         return None
@@ -55,8 +64,8 @@ def serialize_seaice_payload() -> dict | None:
     serialized_images = [serialize_image(image) for image in images if image is not None]
     primary_image = serialized_images[0]
     return {
-        "image_type": "seaice",
-        "source": "NSIDC",
+        "image_type": aggregate_type,
+        "source": source,
         "title": primary_image["title"],
         "image_url": primary_image["image_url"],
         "source_url": primary_image["source_url"],
@@ -64,6 +73,18 @@ def serialize_seaice_payload() -> dict | None:
         "image_time": primary_image.get("image_time"),
         "images": serialized_images,
     }
+
+
+def serialize_seaice_antarctic_payload() -> dict | None:
+    return serialize_grouped_payload(
+        aggregate_type="seaice_antarctic",
+        source="NSIDC",
+        image_types=[
+            "seaice_antarctic_extent",
+            "seaice_antarctic_concentration",
+            "seaice_antarctic_timeseries",
+        ],
+    )
 
 
 @images_bp.get("/latest")
@@ -90,9 +111,16 @@ def latest_image():
         fetch_850hpa_image()
     elif image_type == "seaice":
         fetch_seaice_images()
+    elif image_type == "seaice_antarctic":
+        fetch_seaice_antarctic_images()
 
     if image_type == "seaice":
         image = serialize_seaice_payload()
+        if image is None:
+            return jsonify({"error": "Image type not found."}), 404
+        return jsonify(image)
+    if image_type == "seaice_antarctic":
+        image = serialize_seaice_antarctic_payload()
         if image is None:
             return jsonify({"error": "Image type not found."}), 404
         return jsonify(image)

@@ -11,6 +11,7 @@ const categories = [
   { key: "weather_chart", label: "CWA Surface Chart" },
   { key: "tchp", label: "CWA TCHP" },
   { key: "seaice", label: "NSIDC Sea Ice Extent" },
+  { key: "seaice_antarctic", label: "NSIDC Antarctic Sea Ice Extent" },
   { key: "aqi", label: "AQI" },
   { key: "sst", label: "SST" },
   { key: "reservoir", label: "Reservoir" },

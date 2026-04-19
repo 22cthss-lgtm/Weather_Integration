@@ -28,10 +28,11 @@ export default function ImagePage() {
     return <p>Loading...</p>;
   }
 
-  if (type === "seaice" && Array.isArray(image.images)) {
+  if ((type === "seaice" || type === "seaice_antarctic") && Array.isArray(image.images)) {
+    const heading = type === "seaice_antarctic" ? "NSIDC Antarctic Sea Ice" : "NSIDC Sea Ice";
     return (
       <section>
-        <h2>NSIDC Sea Ice</h2>
+        <h2>{heading}</h2>
         <p>Source: {image.source}</p>
         <div className="image-collection">
           {image.images.map((entry) => (

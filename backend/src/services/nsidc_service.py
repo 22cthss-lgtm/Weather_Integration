@@ -13,9 +13,12 @@ class NSIDCService(BaseImageService):
     extent_image_url = "https://nsidc.org/data/seaice_index/images/daily_images/N_daily_extent_hires.png"
     concentration_image_url = "https://nsidc.org/data/seaice_index/images/daily_images/N_daily_concentration_hires.png"
     timeseries_image_url = "https://nsidc.org/data/seaice_index/images/daily_images/N_iqr_timeseries.png"
+    antarctic_extent_image_url = "https://nsidc.org/data/seaice_index/images/daily_images/S_daily_extent_hires.png"
+    antarctic_concentration_image_url = "https://nsidc.org/data/seaice_index/images/daily_images/S_daily_concentration_hires.png"
+    antarctic_timeseries_image_url = "https://nsidc.org/data/seaice_index/images/daily_images/S_iqr_timeseries.png"
     month_names_regex = r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)"
     image_date_regex = re.compile(
-        rf"(?:Sea Ice Extent|Sea Ice Concentration|Arctic Sea Ice Extent(?: Time Series)?).*?(\d{{2}} {month_names_regex} \d{{4}})"
+        rf"(?:Sea Ice Extent|Sea Ice Concentration|Arctic Sea Ice Extent(?: Time Series)?|Antarctic Sea Ice Extent(?: Time Series)?).*?(\d{{2}} {month_names_regex} \d{{4}})"
     )
 
     @staticmethod
@@ -93,16 +96,11 @@ class NSIDCService(BaseImageService):
         finally:
             response.close()
 
-    def resolve_latest_sea_ice_images(self) -> dict[str, dict[str, str]] | None:
+    def resolve_image_set(self, required_urls: dict[str, str]) -> dict[str, dict[str, str]] | None:
         page_html = self.fetch_page_html()
         if page_html is None:
             return None
 
-        required_urls = {
-            "seaice_extent": self.extent_image_url,
-            "seaice_concentration": self.concentration_image_url,
-            "seaice_timeseries": self.timeseries_image_url,
-        }
         if not all(image_url in page_html for image_url in required_urls.values()):
             return None
 
@@ -120,18 +118,34 @@ class NSIDCService(BaseImageService):
 
         return resolved_images
 
-    def fetch(self):
-        resolved_images = self.resolve_latest_sea_ice_images()
+    def resolve_latest_sea_ice_images(self) -> dict[str, dict[str, str]] | None:
+        return self.resolve_image_set(
+            {
+                "seaice_extent": self.extent_image_url,
+                "seaice_concentration": self.concentration_image_url,
+                "seaice_timeseries": self.timeseries_image_url,
+            }
+        )
+
+    def resolve_latest_antarctic_sea_ice_images(self) -> dict[str, dict[str, str]] | None:
+        return self.resolve_image_set(
+            {
+                "seaice_antarctic_extent": self.antarctic_extent_image_url,
+                "seaice_antarctic_concentration": self.antarctic_concentration_image_url,
+                "seaice_antarctic_timeseries": self.antarctic_timeseries_image_url,
+            }
+        )
+
+    def emit_payloads(
+        self,
+        resolved_images: dict[str, dict[str, str]] | None,
+        titles: dict[str, str],
+        image_types: tuple[str, str, str],
+    ):
         if resolved_images is None:
             return
 
-        titles = {
-            "seaice_extent": "NSIDC Sea Ice Extent",
-            "seaice_concentration": "NSIDC Sea Ice Concentration",
-            "seaice_timeseries": "NSIDC Arctic Sea Ice Extent Time Series",
-        }
-
-        for image_type in ("seaice_extent", "seaice_concentration", "seaice_timeseries"):
+        for image_type in image_types:
             resolved = resolved_images[image_type]
             yield self.build_payload(
                 image_type,
@@ -139,3 +153,27 @@ class NSIDCService(BaseImageService):
                 f"{resolved['image_url']}?ts={int(datetime.now(timezone.utc).timestamp())}",
                 self.sea_ice_today_url,
             )
+
+    def fetch(self):
+        yield from self.emit_payloads(
+            self.resolve_latest_sea_ice_images(),
+            {
+                "seaice_extent": "NSIDC Sea Ice Extent",
+                "seaice_concentration": "NSIDC Sea Ice Concentration",
+                "seaice_timeseries": "NSIDC Arctic Sea Ice Extent Time Series",
+            },
+            ("seaice_extent", "seaice_concentration", "seaice_timeseries"),
+        )
+        yield from self.emit_payloads(
+            self.resolve_latest_antarctic_sea_ice_images(),
+            {
+                "seaice_antarctic_extent": "NSIDC Antarctic Sea Ice Extent",
+                "seaice_antarctic_concentration": "NSIDC Antarctic Sea Ice Concentration",
+                "seaice_antarctic_timeseries": "NSIDC Antarctic Sea Ice Extent Time Series",
+            },
+            (
+                "seaice_antarctic_extent",
+                "seaice_antarctic_concentration",
+                "seaice_antarctic_timeseries",
+            ),
+        )

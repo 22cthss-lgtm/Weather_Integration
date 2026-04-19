@@ -56,6 +56,10 @@ def fetch_seaice_images() -> None:
     save_payloads(NSIDCService().fetch())
 
 
+def fetch_seaice_antarctic_images() -> None:
+    save_payloads(NSIDCService().fetch())
+
+
 def fetch_850hpa_image() -> None:
     latest_image = get_latest_image("850hpa")
     payloads = list(KMAService().fetch_850hpa())
