@@ -13,49 +13,49 @@ from src.services.kma_service import KMAService
 
 
 class KMAServiceTests(unittest.TestCase):
-    def test_resolve_850hpa_image_url_parses_latest_image_from_html(self):
-        html = """
-        <html>
-          <body>
-            <img src="https://www.weather.go.kr/w/repositary/image/cht/img/kim_up85_anlmod_pa4_2026041512.gif">
-          </body>
-        </html>
-        """
+    def test_resolve_850hpa_image_url_parses_latest_image_from_json_api(self):
+        json_payload = [
+            {
+                "name": "2026년 04월 19일 15 (KST) 기본일기도 ",
+                "tm": "2026041915",
+                "url": "/w/repositary/image/cht/img/up85_2026041906.png",
+            }
+        ]
 
         with patch("src.services.kma_service.requests.get") as mock_get:
-            mock_get.return_value.text = html
+            mock_get.return_value.json.return_value = json_payload
             mock_get.return_value.raise_for_status.return_value = None
 
             image_url, image_time = KMAService().resolve_850hpa_image_url()
 
         self.assertEqual(
             image_url,
-            "https://www.weather.go.kr/w/repositary/image/cht/img/kim_up85_anlmod_pa4_2026041512.gif",
+            "https://www.weather.go.kr/w/repositary/image/cht/img/up85_2026041906.png",
         )
-        self.assertEqual(image_time, "2026-04-15 12:00")
+        self.assertEqual(image_time, "2026-04-19 15:00")
 
     def test_resolve_850hpa_image_url_falls_back_to_probe(self):
         service = KMAService()
 
         with patch("src.services.kma_service.requests.get") as mock_get:
-            mock_get.return_value.text = "<html></html>"
+            mock_get.return_value.json.return_value = []
             mock_get.return_value.raise_for_status.return_value = None
 
             with patch.object(
                 service,
                 "resolve_latest_850hpa_image_by_probe",
                 return_value=(
-                    "https://www.weather.go.kr/w/repositary/image/cht/img/kim_up85_anlmod_pa4_2026041512.gif",
-                    "2026-04-15 12:00",
+                    "https://www.weather.go.kr/w/repositary/image/cht/img/up85_2026041906.png",
+                    "2026-04-19 15:00",
                 ),
             ) as mock_probe:
                 image_url, image_time = service.resolve_850hpa_image_url()
 
         self.assertEqual(
             image_url,
-            "https://www.weather.go.kr/w/repositary/image/cht/img/kim_up85_anlmod_pa4_2026041512.gif",
+            "https://www.weather.go.kr/w/repositary/image/cht/img/up85_2026041906.png",
         )
-        self.assertEqual(image_time, "2026-04-15 12:00")
+        self.assertEqual(image_time, "2026-04-19 15:00")
         mock_probe.assert_called_once_with()
 
 
@@ -80,26 +80,26 @@ class Latest850hPaApiTests(unittest.TestCase):
         insert_image(
             image_type="850hpa",
             source="KMA",
-            title="KMA 850hPa Analysis 2026-04-15 12:00",
-            image_url="https://www.weather.go.kr/w/repositary/image/cht/img/kim_up85_anlmod_pa4_2026041512.gif",
+            title="KMA 850hPa Analysis 2026-04-19 15:00",
+            image_url="https://www.weather.go.kr/w/repositary/image/cht/img/up85_2026041906.png",
             source_url="https://www.kma.go.kr/nchn/image/chart/analysis-chart.do",
-            fetched_at="2026-04-15T12:30:00+00:00",
+            fetched_at="2026-04-19T07:30:00+00:00",
         )
 
         with patch(
             "src.jobs.KMAService.resolve_850hpa_image_url",
             return_value=(
-                "https://www.weather.go.kr/w/repositary/image/cht/img/kim_up85_anlmod_pa4_2026041512.gif",
-                "2026-04-15 12:00",
+                "https://www.weather.go.kr/w/repositary/image/cht/img/up85_2026041906.png",
+                "2026-04-19 15:00",
             ),
         ):
             response = self.client.get("/api/images/latest?type=850hpa")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json["image_time"], "2026-04-15 12:00")
+        self.assertEqual(response.json["image_time"], "2026-04-19 15:00")
         self.assertEqual(
             response.json["image_url"],
-            "https://www.weather.go.kr/w/repositary/image/cht/img/kim_up85_anlmod_pa4_2026041512.gif",
+            "https://www.weather.go.kr/w/repositary/image/cht/img/up85_2026041906.png",
         )
 
         with get_connection() as conn:
@@ -114,17 +114,17 @@ class Latest850hPaApiTests(unittest.TestCase):
         insert_image(
             image_type="850hpa",
             source="KMA",
-            title="KMA 850hPa Analysis 2026-04-15 00:00",
-            image_url="https://www.weather.go.kr/w/repositary/image/cht/img/kim_up85_anlmod_pa4_2026041500.gif",
+            title="KMA 850hPa Analysis 2026-04-19 09:00",
+            image_url="https://www.weather.go.kr/w/repositary/image/cht/img/up85_2026041900.png",
             source_url="https://www.kma.go.kr/nchn/image/chart/analysis-chart.do",
-            fetched_at="2026-04-15T01:00:00+00:00",
+            fetched_at="2026-04-19T01:00:00+00:00",
         )
 
         with patch(
             "src.jobs.KMAService.resolve_850hpa_image_url",
             return_value=(
-                "https://www.weather.go.kr/w/repositary/image/cht/img/kim_up85_anlmod_pa4_2026041512.gif",
-                "2026-04-15 12:00",
+                "https://www.weather.go.kr/w/repositary/image/cht/img/up85_2026041906.png",
+                "2026-04-19 15:00",
             ),
         ):
             fetch_850hpa_image()
@@ -143,7 +143,7 @@ class Latest850hPaApiTests(unittest.TestCase):
         self.assertEqual(len(rows), 2)
         self.assertEqual(
             rows[0]["image_url"],
-            "https://www.weather.go.kr/w/repositary/image/cht/img/kim_up85_anlmod_pa4_2026041512.gif",
+            "https://www.weather.go.kr/w/repositary/image/cht/img/up85_2026041906.png",
         )
 
 
