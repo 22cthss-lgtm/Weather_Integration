@@ -10,7 +10,7 @@ def seed_docs() -> None:
         slug="platform-overview",
         content=(
             "# Platform Overview\n\n"
-            "This demo site aggregates weather, ocean, AQI, and reservoir imagery.\n\n"
+            "This demo site aggregates weather and ocean imagery.\n\n"
             "## Included APIs\n\n"
             "- `/api/images/latest?type=...`\n"
             "- `/api/images/history?type=...`\n"

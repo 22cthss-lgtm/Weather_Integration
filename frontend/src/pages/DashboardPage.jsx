@@ -14,9 +14,7 @@ const categories = [
   { key: "cimss_steering_flow", label: "CIMSS / Steering Flow" },
   { key: "seaice", label: "NSIDC Sea Ice Extent" },
   { key: "seaice_antarctic", label: "NSIDC Antarctic Sea Ice Extent" },
-  { key: "aqi", label: "AQI" },
   { key: "sst", label: "SST" },
-  { key: "reservoir", label: "Reservoir" },
 ];
 
 export default function DashboardPage() {
