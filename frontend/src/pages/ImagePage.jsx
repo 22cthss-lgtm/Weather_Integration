@@ -28,12 +28,20 @@ export default function ImagePage() {
     return <p>Loading...</p>;
   }
 
-  if ((type === "seaice" || type === "seaice_antarctic" || type === "cimss_wind_analysis") && Array.isArray(image.images)) {
+  if (
+    (type === "seaice" ||
+      type === "seaice_antarctic" ||
+      type === "cimss_wind_analysis" ||
+      type === "cimss_steering_flow") &&
+    Array.isArray(image.images)
+  ) {
     const heading =
       type === "seaice_antarctic"
         ? "NSIDC Antarctic Sea Ice"
         : type === "cimss_wind_analysis"
           ? "CIMSS Wind Analysis"
+          : type === "cimss_steering_flow"
+            ? "CIMSS Steering Flow"
           : "NSIDC Sea Ice";
     return (
       <section>

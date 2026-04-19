@@ -65,6 +65,10 @@ def fetch_cimss_wind_analysis_images() -> None:
     save_payloads(CIMSSService().fetch_wind_analysis())
 
 
+def fetch_cimss_steering_flow_images() -> None:
+    save_payloads(CIMSSService().fetch_steering_flow())
+
+
 def fetch_850hpa_image() -> None:
     latest_image = get_latest_image("850hpa")
     payloads = list(KMAService().fetch_850hpa())

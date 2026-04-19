@@ -4,6 +4,7 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 
 from ..jobs import (
+    fetch_cimss_steering_flow_images,
     fetch_cimss_wind_analysis_images,
     fetch_850hpa_image,
     fetch_radar_image,
@@ -35,6 +36,12 @@ image_types_with_embedded_time = {
     "seaice_antarctic_timeseries",
     "cimss_wind_shear",
     "cimss_850mb_vorticity",
+    "cimss_steering_flow_700_850mb",
+    "cimss_steering_flow_500_850mb",
+    "cimss_steering_flow_400_850mb",
+    "cimss_steering_flow_300_850mb",
+    "cimss_steering_flow_250_850mb",
+    "cimss_steering_flow_200_700mb",
 }
 
 
@@ -98,6 +105,32 @@ def serialize_cimss_wind_analysis_payload() -> dict | None:
     )
 
 
+def serialize_cimss_steering_flow_payload() -> dict | None:
+    images = [
+        get_latest_image("cimss_steering_flow_700_850mb"),
+        get_latest_image("cimss_steering_flow_500_850mb"),
+        get_latest_image("cimss_steering_flow_400_850mb"),
+        get_latest_image("cimss_steering_flow_300_850mb"),
+        get_latest_image("cimss_steering_flow_250_850mb"),
+        get_latest_image("cimss_steering_flow_200_700mb"),
+    ]
+    if any(image is None for image in images):
+        return None
+
+    serialized_images = [serialize_image(image) for image in images if image is not None]
+    primary_image = serialized_images[4]
+    return {
+        "image_type": "cimss_steering_flow",
+        "source": "CIMSS",
+        "title": primary_image["title"],
+        "image_url": primary_image["image_url"],
+        "source_url": primary_image["source_url"],
+        "fetched_at": primary_image["fetched_at"],
+        "image_time": primary_image.get("image_time"),
+        "images": serialized_images,
+    }
+
+
 @images_bp.get("/latest")
 def latest_image():
     image_type = request.args.get("type", "").strip()
@@ -126,6 +159,8 @@ def latest_image():
         fetch_seaice_antarctic_images()
     elif image_type == "cimss_wind_analysis":
         fetch_cimss_wind_analysis_images()
+    elif image_type == "cimss_steering_flow":
+        fetch_cimss_steering_flow_images()
 
     if image_type == "seaice":
         image = serialize_seaice_payload()
@@ -139,6 +174,11 @@ def latest_image():
         return jsonify(image)
     if image_type == "cimss_wind_analysis":
         image = serialize_cimss_wind_analysis_payload()
+        if image is None:
+            return jsonify({"error": "Image type not found."}), 404
+        return jsonify(image)
+    if image_type == "cimss_steering_flow":
+        image = serialize_cimss_steering_flow_payload()
         if image is None:
             return jsonify({"error": "Image type not found."}), 404
         return jsonify(image)

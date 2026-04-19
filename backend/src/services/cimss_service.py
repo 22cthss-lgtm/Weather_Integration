@@ -10,8 +10,19 @@ from .base import BaseImageService
 class CIMSSService(BaseImageService):
     source_name = "CIMSS"
     source_page_url = "https://tropic.ssec.wisc.edu/real-time/windmain.php?&basin=westpac&sat=wgms&prod=shr&zoom=&time="
+    steering_flow_page_url = (
+        "https://tropic.ssec.wisc.edu/real-time/dlmmain.php?&basin=westpac&sat=wgms&prod=dlm1&zoom=&time="
+    )
     shear_image_url = "https://tropic.ssec.wisc.edu/real-time/westpac/winds/wgmsshr.GIF"
     vorticity_image_url = "https://tropic.ssec.wisc.edu/real-time/westpac/winds/wgmsvor.GIF"
+    steering_flow_layers = (
+        ("cimss_steering_flow_700_850mb", "700 - 850 mb", "wgmsdlm1.GIF"),
+        ("cimss_steering_flow_500_850mb", "500 - 850 mb", "wgmsdlm2.GIF"),
+        ("cimss_steering_flow_400_850mb", "400 - 850 mb", "wgmsdlm3.GIF"),
+        ("cimss_steering_flow_300_850mb", "300 - 850 mb", "wgmsdlm4.GIF"),
+        ("cimss_steering_flow_250_850mb", "250 - 850 mb", "wgmsdlm5.GIF"),
+        ("cimss_steering_flow_200_700mb", "200 - 700 mb", "wgmsdlm6.GIF"),
+    )
     embedded_time_patterns = (
         re.compile(
             r"(?P<hour>\d{2})\s*UTC\s*(?P<day>\d{1,2})\s*(?P<month>[A-Z]{3})\s*(?P<year>\d{4})",
@@ -50,6 +61,19 @@ class CIMSSService(BaseImageService):
         try:
             response = requests.get(
                 self.source_page_url,
+                timeout=20,
+                headers=self.no_cache_headers(),
+                params={"_": self.cache_buster()},
+            )
+            response.raise_for_status()
+            return response.text
+        except requests.RequestException:
+            return None
+
+    def fetch_specific_page_html(self, page_url: str) -> str | None:
+        try:
+            response = requests.get(
+                page_url,
                 timeout=20,
                 headers=self.no_cache_headers(),
                 params={"_": self.cache_buster()},
@@ -145,6 +169,34 @@ class CIMSSService(BaseImageService):
 
         return resolved_images
 
+    def resolve_latest_steering_flow_images(self) -> dict[str, dict[str, str]] | None:
+        page_html = self.fetch_specific_page_html(self.steering_flow_page_url)
+        if page_html is None:
+            return None
+
+        if "wgmsdlm1.GIF" not in page_html and "prod=dlm1" not in page_html:
+            return None
+
+        resolved_images: dict[str, dict[str, str]] = {}
+
+        for image_type, _, image_name in self.steering_flow_layers:
+            image_url = f"https://tropic.ssec.wisc.edu/real-time/westpac/winds/{image_name}"
+            response = self.fetch_image_response(image_url)
+            if response is None:
+                return None
+            try:
+                image_time = self.resolve_image_time(response)
+                if image_time is None:
+                    return None
+                resolved_images[image_type] = {
+                    "image_url": f"{image_url}?ts={self.cache_buster()}",
+                    "image_time": image_time,
+                }
+            finally:
+                response.close()
+
+        return resolved_images
+
     def fetch_wind_analysis(self):
         resolved_images = self.resolve_latest_wind_analysis_images()
         if resolved_images is None:
@@ -161,6 +213,20 @@ class CIMSSService(BaseImageService):
                 f"{titles[image_type]} {resolved['image_time']}",
                 resolved["image_url"],
                 self.source_page_url,
+            )
+
+    def fetch_steering_flow(self):
+        resolved_images = self.resolve_latest_steering_flow_images()
+        if resolved_images is None:
+            return
+
+        for image_type, layer_label, _ in self.steering_flow_layers:
+            resolved = resolved_images[image_type]
+            yield self.build_payload(
+                image_type,
+                f"CIMSS Steering Flow {layer_label} {resolved['image_time']}",
+                resolved["image_url"],
+                self.steering_flow_page_url,
             )
 
     def fetch(self):
