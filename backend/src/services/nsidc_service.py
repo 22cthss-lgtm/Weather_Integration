@@ -118,12 +118,12 @@ class NSIDCService(BaseImageService):
 
         return resolved_images
 
-    def resolve_latest_sea_ice_images(self) -> dict[str, dict[str, str]] | None:
+    def resolve_latest_arctic_sea_ice_images(self) -> dict[str, dict[str, str]] | None:
         return self.resolve_image_set(
             {
-                "seaice_extent": self.extent_image_url,
-                "seaice_concentration": self.concentration_image_url,
-                "seaice_timeseries": self.timeseries_image_url,
+                "seaice_arctic_extent": self.extent_image_url,
+                "seaice_arctic_concentration": self.concentration_image_url,
+                "seaice_arctic_timeseries": self.timeseries_image_url,
             }
         )
 
@@ -152,17 +152,17 @@ class NSIDCService(BaseImageService):
                 f"{titles[image_type]} {resolved['image_time']}",
                 f"{resolved['image_url']}?ts={int(datetime.now(timezone.utc).timestamp())}",
                 self.sea_ice_today_url,
-            )
+        )
 
     def fetch(self):
         yield from self.emit_payloads(
-            self.resolve_latest_sea_ice_images(),
+            self.resolve_latest_arctic_sea_ice_images(),
             {
-                "seaice_extent": "NSIDC Sea Ice Extent",
-                "seaice_concentration": "NSIDC Sea Ice Concentration",
-                "seaice_timeseries": "NSIDC Arctic Sea Ice Extent Time Series",
+                "seaice_arctic_extent": "NSIDC Arctic Sea Ice Extent",
+                "seaice_arctic_concentration": "NSIDC Arctic Sea Ice Concentration",
+                "seaice_arctic_timeseries": "NSIDC Arctic Sea Ice Extent Time Series",
             },
-            ("seaice_extent", "seaice_concentration", "seaice_timeseries"),
+            ("seaice_arctic_extent", "seaice_arctic_concentration", "seaice_arctic_timeseries"),
         )
         yield from self.emit_payloads(
             self.resolve_latest_antarctic_sea_ice_images(),

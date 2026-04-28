@@ -12,7 +12,7 @@ const categories = [
   { key: "tchp", label: "CWA TCHP" },
   { key: "cimss_wind_analysis", label: "CIMSS / Wind Analysis" },
   { key: "cimss_steering_flow", label: "CIMSS / Steering Flow" },
-  { key: "seaice", label: "NSIDC Sea Ice Extent" },
+  { key: "seaice_arctic", label: "NSIDC Arctic Sea Ice Extent" },
   { key: "seaice_antarctic", label: "NSIDC Antarctic Sea Ice Extent" },
   { key: "sst", label: "SST" },
 ];
@@ -35,7 +35,7 @@ const sections = [
   },
   {
     title: "Polar and Climate Monitoring",
-    categoryKeys: ["seaice", "seaice_antarctic"],
+    categoryKeys: ["seaice_arctic", "seaice_antarctic"],
   },
 ];
 

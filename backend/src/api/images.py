@@ -9,8 +9,8 @@ from ..jobs import (
     fetch_850hpa_image,
     fetch_radar_image,
     fetch_rainfall_image,
+    fetch_seaice_arctic_images,
     fetch_seaice_antarctic_images,
-    fetch_seaice_images,
     fetch_satellite_image,
     fetch_sst_image,
     fetch_temperature_image,
@@ -30,9 +30,9 @@ image_types_with_embedded_time = {
     "850hpa",
     "weather_chart",
     "tchp",
-    "seaice_extent",
-    "seaice_concentration",
-    "seaice_timeseries",
+    "seaice_arctic_extent",
+    "seaice_arctic_concentration",
+    "seaice_arctic_timeseries",
     "seaice_antarctic_extent",
     "seaice_antarctic_concentration",
     "seaice_antarctic_timeseries",
@@ -59,11 +59,11 @@ def serialize_image(image: dict) -> dict:
     return serialized
 
 
-def serialize_seaice_payload() -> dict | None:
+def serialize_seaice_arctic_payload() -> dict | None:
     return serialize_grouped_payload(
-        aggregate_type="seaice",
+        aggregate_type="seaice_arctic",
         source="NSIDC",
-        image_types=["seaice_extent", "seaice_concentration", "seaice_timeseries"],
+        image_types=["seaice_arctic_extent", "seaice_arctic_concentration", "seaice_arctic_timeseries"],
     )
 
 
@@ -155,8 +155,8 @@ def latest_image():
         fetch_sst_image()
     elif image_type == "850hpa":
         fetch_850hpa_image()
-    elif image_type == "seaice":
-        fetch_seaice_images()
+    elif image_type == "seaice_arctic":
+        fetch_seaice_arctic_images()
     elif image_type == "seaice_antarctic":
         fetch_seaice_antarctic_images()
     elif image_type == "cimss_wind_analysis":
@@ -164,8 +164,8 @@ def latest_image():
     elif image_type == "cimss_steering_flow":
         fetch_cimss_steering_flow_images()
 
-    if image_type == "seaice":
-        image = serialize_seaice_payload()
+    if image_type == "seaice_arctic":
+        image = serialize_seaice_arctic_payload()
         if image is None:
             return jsonify({"error": "Image type not found."}), 404
         return jsonify(image)

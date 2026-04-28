@@ -12,7 +12,7 @@ from src.services.nsidc_service import NSIDCService
 
 
 class NSIDCServiceTests(unittest.TestCase):
-    def test_resolve_latest_sea_ice_images_parses_dates_from_current_assets(self):
+    def test_resolve_latest_arctic_sea_ice_images_parses_dates_from_current_assets(self):
         service = NSIDCService()
 
         with patch.object(
@@ -24,12 +24,12 @@ class NSIDCServiceTests(unittest.TestCase):
                 b"Arctic Sea Ice Extent, Jan 1979 to 07 Apr 2026",
             ],
         ):
-            payloads = service.resolve_latest_sea_ice_images()
+            payloads = service.resolve_latest_arctic_sea_ice_images()
 
-        self.assertEqual(payloads["seaice_extent"]["image_time"], "2026-03-08 00:00")
-        self.assertEqual(payloads["seaice_extent"]["image_url"], service.extent_image_url)
-        self.assertEqual(payloads["seaice_concentration"]["image_time"], "2026-04-06 00:00")
-        self.assertEqual(payloads["seaice_timeseries"]["image_time"], "2026-04-07 00:00")
+        self.assertEqual(payloads["seaice_arctic_extent"]["image_time"], "2026-03-08 00:00")
+        self.assertEqual(payloads["seaice_arctic_extent"]["image_url"], service.extent_image_url)
+        self.assertEqual(payloads["seaice_arctic_concentration"]["image_time"], "2026-04-06 00:00")
+        self.assertEqual(payloads["seaice_arctic_timeseries"]["image_time"], "2026-04-07 00:00")
 
     def test_resolve_latest_antarctic_sea_ice_images_parses_dates_from_current_assets(self):
         service = NSIDCService()
@@ -50,6 +50,36 @@ class NSIDCServiceTests(unittest.TestCase):
         self.assertEqual(payloads["seaice_antarctic_concentration"]["image_time"], "2026-04-12 00:00")
         self.assertEqual(payloads["seaice_antarctic_timeseries"]["image_time"], "2026-04-13 00:00")
 
+    def test_fetch_emits_arctic_titles_for_arctic_payloads(self):
+        service = NSIDCService()
+
+        with (
+            patch.object(
+                service,
+                "resolve_latest_arctic_sea_ice_images",
+                return_value={
+                    "seaice_arctic_extent": {
+                        "image_url": service.extent_image_url,
+                        "image_time": "2026-03-08 00:00",
+                    },
+                    "seaice_arctic_concentration": {
+                        "image_url": service.concentration_image_url,
+                        "image_time": "2026-04-06 00:00",
+                    },
+                    "seaice_arctic_timeseries": {
+                        "image_url": service.timeseries_image_url,
+                        "image_time": "2026-04-07 00:00",
+                    },
+                },
+            ),
+            patch.object(service, "resolve_latest_antarctic_sea_ice_images", return_value=None),
+        ):
+            payloads = list(service.fetch())
+
+        self.assertEqual(payloads[0].title, "NSIDC Arctic Sea Ice Extent 2026-03-08 00:00")
+        self.assertEqual(payloads[1].title, "NSIDC Arctic Sea Ice Concentration 2026-04-06 00:00")
+        self.assertEqual(payloads[2].title, "NSIDC Arctic Sea Ice Extent Time Series 2026-04-07 00:00")
+
 
 class LatestSeaIceApiTests(unittest.TestCase):
     def setUp(self):
@@ -68,25 +98,25 @@ class LatestSeaIceApiTests(unittest.TestCase):
         self.db_path_patcher.stop()
         self.temp_dir.cleanup()
 
-    def test_latest_seaice_returns_aggregate_payload_with_extent_thumbnail(self):
+    def test_latest_seaice_returns_404(self):
         insert_image(
-            image_type="seaice_extent",
+            image_type="seaice_arctic_extent",
             source="NSIDC",
-            title="NSIDC Sea Ice Extent 2026-03-08 00:00",
+            title="NSIDC Arctic Sea Ice Extent 2026-03-08 00:00",
             image_url="https://nsidc.org/data/seaice_index/images/daily_images/N_daily_extent_hires.png?ts=1",
             source_url="https://nsidc.org/sea-ice-today",
             fetched_at="2026-04-17T00:10:00+00:00",
         )
         insert_image(
-            image_type="seaice_concentration",
+            image_type="seaice_arctic_concentration",
             source="NSIDC",
-            title="NSIDC Sea Ice Concentration 2026-04-06 00:00",
+            title="NSIDC Arctic Sea Ice Concentration 2026-04-06 00:00",
             image_url="https://nsidc.org/data/seaice_index/images/daily_images/N_daily_concentration_hires.png?ts=1",
             source_url="https://nsidc.org/sea-ice-today",
             fetched_at="2026-04-17T00:10:01+00:00",
         )
         insert_image(
-            image_type="seaice_timeseries",
+            image_type="seaice_arctic_timeseries",
             source="NSIDC",
             title="NSIDC Arctic Sea Ice Extent Time Series 2026-04-07 00:00",
             image_url="https://nsidc.org/data/seaice_index/images/daily_images/N_iqr_timeseries.png?ts=1",
@@ -94,17 +124,53 @@ class LatestSeaIceApiTests(unittest.TestCase):
             fetched_at="2026-04-17T00:10:02+00:00",
         )
 
-        with patch("src.api.images.fetch_seaice_images") as mock_fetch:
+        with patch("src.api.images.fetch_seaice_arctic_images") as mock_fetch:
             response = self.client.get("/api/images/latest?type=seaice")
 
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json, {"error": "Image type not found."})
+        mock_fetch.assert_not_called()
+
+    def test_latest_seaice_arctic_returns_aggregate_payload_with_arctic_type(self):
+        insert_image(
+            image_type="seaice_arctic_extent",
+            source="NSIDC",
+            title="NSIDC Arctic Sea Ice Extent 2026-03-08 00:00",
+            image_url="https://nsidc.org/data/seaice_index/images/daily_images/N_daily_extent_hires.png?ts=1",
+            source_url="https://nsidc.org/sea-ice-today",
+            fetched_at="2026-04-17T00:10:00+00:00",
+        )
+        insert_image(
+            image_type="seaice_arctic_concentration",
+            source="NSIDC",
+            title="NSIDC Arctic Sea Ice Concentration 2026-04-06 00:00",
+            image_url="https://nsidc.org/data/seaice_index/images/daily_images/N_daily_concentration_hires.png?ts=1",
+            source_url="https://nsidc.org/sea-ice-today",
+            fetched_at="2026-04-17T00:10:01+00:00",
+        )
+        insert_image(
+            image_type="seaice_arctic_timeseries",
+            source="NSIDC",
+            title="NSIDC Arctic Sea Ice Extent Time Series 2026-04-07 00:00",
+            image_url="https://nsidc.org/data/seaice_index/images/daily_images/N_iqr_timeseries.png?ts=1",
+            source_url="https://nsidc.org/sea-ice-today",
+            fetched_at="2026-04-17T00:10:02+00:00",
+        )
+
+        with patch("src.api.images.fetch_seaice_arctic_images") as mock_fetch:
+            response = self.client.get("/api/images/latest?type=seaice_arctic")
+
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json["image_type"], "seaice")
+        self.assertEqual(response.json["image_type"], "seaice_arctic")
         self.assertEqual(response.json["image_url"], "https://nsidc.org/data/seaice_index/images/daily_images/N_daily_extent_hires.png?ts=1")
         self.assertEqual(response.json["image_time"], "2026-03-08 00:00")
+        self.assertEqual(response.json["title"], "NSIDC Arctic Sea Ice Extent 2026-03-08 00:00")
         self.assertEqual(len(response.json["images"]), 3)
-        self.assertEqual(response.json["images"][0]["image_type"], "seaice_extent")
-        self.assertEqual(response.json["images"][1]["image_type"], "seaice_concentration")
-        self.assertEqual(response.json["images"][2]["image_type"], "seaice_timeseries")
+        self.assertEqual(response.json["images"][0]["title"], "NSIDC Arctic Sea Ice Extent 2026-03-08 00:00")
+        self.assertEqual(response.json["images"][1]["title"], "NSIDC Arctic Sea Ice Concentration 2026-04-06 00:00")
+        self.assertEqual(response.json["images"][0]["image_type"], "seaice_arctic_extent")
+        self.assertEqual(response.json["images"][1]["image_type"], "seaice_arctic_concentration")
+        self.assertEqual(response.json["images"][2]["image_type"], "seaice_arctic_timeseries")
         mock_fetch.assert_called_once_with()
 
     def test_latest_seaice_antarctic_returns_aggregate_payload_with_extent_thumbnail(self):

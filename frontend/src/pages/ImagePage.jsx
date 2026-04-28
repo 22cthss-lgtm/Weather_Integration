@@ -2,6 +2,30 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { fetchLatestImage } from "../api";
 
+function getCollectionHeading(type) {
+  if (type === "seaice_arctic") {
+    return "NSIDC Arctic Sea Ice Extent";
+  }
+
+  if (type === "seaice_antarctic") {
+    return "NSIDC Antarctic Sea Ice Extent";
+  }
+
+  if (type === "cimss_wind_analysis") {
+    return "CIMSS Wind Analysis";
+  }
+
+  if (type === "cimss_steering_flow") {
+    return "CIMSS Steering Flow";
+  }
+
+  return "";
+}
+
+function getDisplayTitle(type, entry) {
+  return entry.title;
+}
+
 export default function ImagePage() {
   const { type } = useParams();
   const [image, setImage] = useState(null);
@@ -29,30 +53,22 @@ export default function ImagePage() {
   }
 
   if (
-    (type === "seaice" ||
+    (type === "seaice_arctic" ||
       type === "seaice_antarctic" ||
       type === "cimss_wind_analysis" ||
       type === "cimss_steering_flow") &&
     Array.isArray(image.images)
   ) {
-    const heading =
-      type === "seaice_antarctic"
-        ? "NSIDC Antarctic Sea Ice"
-        : type === "cimss_wind_analysis"
-          ? "CIMSS Wind Analysis"
-          : type === "cimss_steering_flow"
-            ? "CIMSS Steering Flow"
-          : "NSIDC Sea Ice";
     return (
       <section>
-        <h2>{heading}</h2>
+        <h2>{getCollectionHeading(type)}</h2>
         <p>Source: {image.source}</p>
         <div className="image-collection">
           {image.images.map((entry) => (
             <article className="image-panel" key={entry.image_type}>
-              <h3>{entry.title}</h3>
+              <h3>{getDisplayTitle(type, entry)}</h3>
               <p>{entry.image_time ? `Image Time: ${entry.image_time}` : `Fetched At: ${entry.fetched_at}`}</p>
-              <img className="detail-image" src={entry.image_url} alt={entry.title} />
+              <img className="detail-image" src={entry.image_url} alt={getDisplayTitle(type, entry)} />
             </article>
           ))}
         </div>
