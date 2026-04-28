@@ -27,6 +27,26 @@ nav {
   gap: 12px;
 }
 
+
+.dashboard-page {
+  display: grid;
+  gap: 24px;
+}
+
+.dashboard-page h2,
+.dashboard-section-title {
+  margin: 0;
+}
+
+.dashboard-sections {
+  display: grid;
+  gap: 28px;
+}
+
+.dashboard-section {
+  display: grid;
+  gap: 14px;
+}
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

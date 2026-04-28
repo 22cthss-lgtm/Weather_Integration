@@ -17,6 +17,27 @@ const categories = [
   { key: "sst", label: "SST" },
 ];
 
+const categoryMap = Object.fromEntries(categories.map((category) => [category.key, category]));
+
+const sections = [
+  {
+    title: "Taiwan Real-Time Weather Overview",
+    categoryKeys: ["satellite", "radar", "temperature", "rainfall"],
+  },
+  {
+    title: "Synoptic Weather Analysis",
+    categoryKeys: ["weather_chart", "850hpa"],
+  },
+  {
+    title: "Ocean and Typhoon Potential",
+    categoryKeys: ["tchp", "sst", "cimss_wind_analysis", "cimss_steering_flow"],
+  },
+  {
+    title: "Polar and Climate Monitoring",
+    categoryKeys: ["seaice", "seaice_antarctic"],
+  },
+];
+
 export default function DashboardPage() {
   const [cards, setCards] = useState({});
 
@@ -37,24 +58,33 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <section>
+    <section className="dashboard-page">
       <h2>Dashboard</h2>
-      <div className="grid">
-        {categories.map((category) => {
-          const card = cards[category.key];
-          return (
-            <article className="card" key={category.key}>
-              <h3>{category.label}</h3>
-              {card ? <img src={card.image_url} alt={card.title} /> : <p>Loading...</p>}
-              {card ? (
-                <p className="card-meta">
-                  {card.image_time ? `Image Time: ${card.image_time}` : `Fetched At: ${card.fetched_at}`}
-                </p>
-              ) : null}
-              <Link to={`/images/${category.key}`}>View latest</Link>
-            </article>
-          );
-        })}
+      <div className="dashboard-sections">
+        {sections.map((section) => (
+          <section className="dashboard-section" key={section.title}>
+            <h3 className="dashboard-section-title">{section.title}</h3>
+            <div className="grid">
+              {section.categoryKeys.map((categoryKey) => {
+                const category = categoryMap[categoryKey];
+                const card = cards[category.key];
+
+                return (
+                  <article className="card" key={category.key}>
+                    <h3>{category.label}</h3>
+                    {card ? <img src={card.image_url} alt={card.title} /> : <p>Loading...</p>}
+                    {card ? (
+                      <p className="card-meta">
+                        {card.image_time ? `Image Time: ${card.image_time}` : `Fetched At: ${card.fetched_at}`}
+                      </p>
+                    ) : null}
+                    <Link to={`/images/${category.key}`}>View latest</Link>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ))}
       </div>
     </section>
   );
