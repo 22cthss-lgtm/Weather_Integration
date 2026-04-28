@@ -23,6 +23,8 @@ from ..models.image_repository import get_image_history, get_latest_image, get_l
 images_bp = Blueprint("images", __name__)
 image_time_regex = re.compile(r"(?P<image_time>\d{4}-\d{2}-\d{2} \d{2}:\d{2})$")
 image_types_with_embedded_time = {
+    "satellite",
+    "radar",
     "temperature",
     "rainfall",
     "850hpa",
