@@ -22,18 +22,22 @@ const sstTitleDateRegex = /(\d{4}-\d{2}-\d{2})$/;
 
 const sections = [
   {
+    id: "taiwan-real-time-weather-overview",
     title: "Taiwan Real-Time Weather Overview",
     categoryKeys: ["satellite", "radar", "temperature", "rainfall"],
   },
   {
+    id: "synoptic-weather-analysis",
     title: "Synoptic Weather Analysis",
     categoryKeys: ["weather_chart", "850hpa"],
   },
   {
+    id: "ocean-and-typhoon-potential",
     title: "Ocean and Typhoon Potential",
     categoryKeys: ["tchp", "sst", "cimss_wind_analysis", "cimss_steering_flow"],
   },
   {
+    id: "polar-and-climate-monitoring",
     title: "Polar and Climate Monitoring",
     categoryKeys: ["seaice_arctic", "seaice_antarctic"],
   },
@@ -41,6 +45,10 @@ const sections = [
 
 export default function DashboardPage() {
   const [cards, setCards] = useState({});
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   function getCardLabel(categoryKey, defaultLabel) {
     if (categoryKey === "sst") {
@@ -83,10 +91,24 @@ export default function DashboardPage() {
 
   return (
     <section className="dashboard-page">
-      <h2>Dashboard</h2>
+      <section className="dashboard-hero" aria-label="Real-Time Weather Overview">
+        <img src="/Hero_Section_Image.jpeg" alt="" className="dashboard-hero-image" />
+        <div className="dashboard-hero-overlay">
+          <div className="dashboard-hero-content">
+            <h2>Real-Time Weather Overview</h2>
+            <nav className="dashboard-hero-links" aria-label="Dashboard sections">
+              {sections.map((section) => (
+                <a href={`#${section.id}`} key={section.id}>
+                  {section.title}
+                </a>
+              ))}
+            </nav>
+          </div>
+        </div>
+      </section>
       <div className="dashboard-sections">
         {sections.map((section) => (
-          <section className="dashboard-section" key={section.title}>
+          <section className="dashboard-section" id={section.id} key={section.title}>
             <h3 className="dashboard-section-title">{section.title}</h3>
             <div className="grid">
               {section.categoryKeys.map((categoryKey) => {
@@ -94,18 +116,20 @@ export default function DashboardPage() {
                 const card = cards[category.key];
 
                 return (
-                  <article className="card" key={category.key}>
+                  <Link className="card" to={`/images/${category.key}`} key={category.key}>
                     <h3>{getCardLabel(category.key, category.label)}</h3>
                     {card ? <img src={card.image_url} alt={card.title} /> : <p>Loading...</p>}
                     {card ? <p className="card-meta">{getCardMeta(category.key, card)}</p> : null}
-                    <Link to={`/images/${category.key}`}>View latest</Link>
-                  </article>
+                  </Link>
                 );
               })}
             </div>
           </section>
         ))}
       </div>
+      <button className="back-to-top-button" type="button" onClick={scrollToTop} aria-label="Back to top">
+        ↑
+      </button>
     </section>
   );
 }

@@ -7,7 +7,11 @@ export default function App() {
   return (
     <div className="app-shell">
       <header>
-        <h1>Weather Integration</h1>
+        <h1>
+          <Link className="site-title-link" to="/">
+            Weather Integration
+          </Link>
+        </h1>
         <nav>
           <Link to="/">Dashboard</Link>
           <Link to="/docs">Docs</Link>
