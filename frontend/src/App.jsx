@@ -1,9 +1,13 @@
 import { Link, Route, Routes } from "react-router-dom";
+import { useState } from "react";
 import DashboardPage from "./pages/DashboardPage";
 import DocsPage from "./pages/DocsPage";
+import FaqPage from "./pages/FaqPage";
 import ImagePage from "./pages/ImagePage";
 
 export default function App() {
+  const [faqResetToken, setFaqResetToken] = useState(0);
+
   return (
     <div className="app-shell">
       <header>
@@ -15,6 +19,9 @@ export default function App() {
         <nav>
           <Link to="/">Dashboard</Link>
           <Link to="/docs">Docs</Link>
+          <Link to="/faq" onClick={() => setFaqResetToken((current) => current + 1)}>
+            FAQ
+          </Link>
         </nav>
       </header>
       <main>
@@ -22,6 +29,7 @@ export default function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/images/:type" element={<ImagePage />} />
           <Route path="/docs" element={<DocsPage />} />
+          <Route path="/faq" element={<FaqPage resetToken={faqResetToken} />} />
         </Routes>
       </main>
     </div>

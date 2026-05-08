@@ -11,5 +11,7 @@ dist/
 
 backend/data/
 
+checkpoint.md
+
 .DS_Store
 Thumbs.db
