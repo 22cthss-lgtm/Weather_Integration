@@ -12,6 +12,19 @@ def insert_image(
     fetched_at: str,
 ) -> None:
     with get_connection() as conn:
+        latest_row = conn.execute(
+            """
+            SELECT title, image_url
+            FROM images
+            WHERE image_type = ?
+            ORDER BY fetched_at DESC
+            LIMIT 1
+            """,
+            (image_type,),
+        ).fetchone()
+        if latest_row and latest_row["title"] == title and latest_row["image_url"] == image_url:
+            return
+
         conn.execute(
             """
             INSERT INTO images (image_type, source, title, image_url, source_url, fetched_at)
