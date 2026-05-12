@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -94,6 +95,23 @@ class LatestTemperatureApiTests(unittest.TestCase):
             "https://www.cwa.gov.tw/Data/temperature/2026-04-10_1700.GTP8w.jpg",
         )
         mock_fetch.assert_called_once_with()
+
+    def test_latest_temperature_skips_fetch_within_one_hour_ttl(self):
+        insert_image(
+            image_type="temperature",
+            source="CWA",
+            title="CWA Temperature Distribution 2026-05-12 17:00",
+            image_url="https://www.cwa.gov.tw/Data/temperature/2026-05-12_1700.GTP8w.jpg",
+            source_url="https://www.cwa.gov.tw/V8/C/W/OBS_Temp.html",
+            fetched_at=(datetime.now(timezone.utc) - timedelta(minutes=45)).isoformat(),
+        )
+
+        with patch("src.api.images.fetch_temperature_image") as mock_fetch:
+            response = self.client.get("/api/images/latest?type=temperature")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["image_time"], "2026-05-12 17:00")
+        mock_fetch.assert_not_called()
 
 
 if __name__ == "__main__":

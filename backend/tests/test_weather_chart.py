@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -94,6 +95,23 @@ class LatestWeatherChartApiTests(unittest.TestCase):
             "https://www.cwa.gov.tw/Data/fcst_img/FI04.png?t=2026041604-4",
         )
         mock_fetch.assert_called_once_with()
+
+    def test_latest_weather_chart_skips_fetch_within_twelve_hour_ttl(self):
+        insert_image(
+            image_type="weather_chart",
+            source="CWA",
+            title="CWA Surface Weather Chart 2026-05-12 08:00",
+            image_url="https://www.cwa.gov.tw/Data/fcst_img/FI04.png?t=2026051208-1",
+            source_url="https://www.cwa.gov.tw/V8/C/W/analysis.html",
+            fetched_at=(datetime.now(timezone.utc) - timedelta(hours=11)).isoformat(),
+        )
+
+        with patch("src.api.images.fetch_weather_chart_image") as mock_fetch:
+            response = self.client.get("/api/images/latest?type=weather_chart")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["image_time"], "2026-05-12 08:00")
+        mock_fetch.assert_not_called()
 
     def test_latest_weather_chart_falls_back_to_fetched_time_when_title_has_no_embedded_time(self):
         insert_image(

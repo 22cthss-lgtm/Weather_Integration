@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
 
-from ..config import FETCH_INTERVAL_MINUTES
+from ..config import DEFAULT_IMAGE_TTL_MINUTES, IMAGE_TYPE_TTL_MINUTES
 from ..jobs import (
     fetch_cimss_steering_flow_images,
     fetch_cimss_wind_analysis_images,
@@ -22,7 +22,6 @@ from ..models.image_repository import get_image_history, get_latest_image, get_l
 
 
 images_bp = Blueprint("images", __name__)
-latest_image_ttl = timedelta(minutes=FETCH_INTERVAL_MINUTES)
 image_time_regex = re.compile(r"(?P<image_time>\d{4}-\d{2}-\d{2} \d{2}:\d{2})$")
 image_types_with_embedded_time = {
     "satellite",
@@ -80,11 +79,16 @@ def parse_fetched_at(fetched_at: str | None) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
+def ttl_for_image_type(image_type: str | None) -> timedelta:
+    ttl_minutes = IMAGE_TYPE_TTL_MINUTES.get(image_type or "", DEFAULT_IMAGE_TTL_MINUTES)
+    return timedelta(minutes=ttl_minutes)
+
+
 def is_fresh_image(image: dict | None) -> bool:
     fetched_at = parse_fetched_at(image.get("fetched_at") if image else None)
     if fetched_at is None:
         return False
-    return datetime.now(timezone.utc) - fetched_at <= latest_image_ttl
+    return datetime.now(timezone.utc) - fetched_at <= ttl_for_image_type(image.get("image_type"))
 
 
 def latest_records_for_request(image_type: str) -> list[dict] | None:

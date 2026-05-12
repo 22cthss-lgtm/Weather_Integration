@@ -74,19 +74,26 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    async function load() {
-      const results = await Promise.allSettled(
-        categories.map(async (category) => [category.key, await fetchLatestImage(category.key)])
-      );
+    let isMounted = true;
 
-      const successfulCards = results
-        .filter((result) => result.status === "fulfilled")
-        .map((result) => result.value);
+    categories.forEach(async (category) => {
+      try {
+        const card = await fetchLatestImage(category.key);
+        if (!isMounted) {
+          return;
+        }
+        setCards((currentCards) => ({
+          ...currentCards,
+          [category.key]: card,
+        }));
+      } catch {
+        // Keep the card in its loading state if one source is temporarily unavailable.
+      }
+    });
 
-      setCards(Object.fromEntries(successfulCards));
-    }
-
-    load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
@@ -118,7 +125,11 @@ export default function DashboardPage() {
                 return (
                   <Link className="card" to={`/images/${category.key}`} key={category.key}>
                     <h3>{getCardLabel(category.key, category.label)}</h3>
-                    {card ? <img src={card.image_url} alt={card.title} /> : <p>Loading...</p>}
+                    {card ? (
+                      <img src={card.image_url} alt={card.title} loading="lazy" decoding="async" />
+                    ) : (
+                      <p>Loading...</p>
+                    )}
                     {card ? <p className="card-meta">{getCardMeta(category.key, card)}</p> : null}
                   </Link>
                 );

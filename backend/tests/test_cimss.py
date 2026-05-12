@@ -1,6 +1,6 @@
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -257,7 +257,7 @@ class LatestCIMSSWindAnalysisApiTests(unittest.TestCase):
 
     def test_latest_cimss_steering_flow_skips_fetch_when_all_child_records_are_fresh(self):
         source_url = "https://tropic.ssec.wisc.edu/real-time/dlmmain.php?&basin=westpac&sat=wgms&prod=dlm1&zoom=&time="
-        fetched_at = datetime.now(timezone.utc).isoformat()
+        fetched_at = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
         image_entries = [
             (
                 "cimss_steering_flow_700_850mb",

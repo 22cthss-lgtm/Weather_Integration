@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -172,6 +173,40 @@ class LatestSeaIceApiTests(unittest.TestCase):
         self.assertEqual(response.json["images"][1]["image_type"], "seaice_arctic_concentration")
         self.assertEqual(response.json["images"][2]["image_type"], "seaice_arctic_timeseries")
         mock_fetch.assert_called_once_with()
+
+    def test_latest_seaice_arctic_skips_fetch_when_all_child_records_are_within_default_ttl(self):
+        fetched_at = (datetime.now(timezone.utc) - timedelta(hours=23)).isoformat()
+        insert_image(
+            image_type="seaice_arctic_extent",
+            source="NSIDC",
+            title="NSIDC Arctic Sea Ice Extent 2026-05-11 00:00",
+            image_url="https://nsidc.org/data/seaice_index/images/daily_images/N_daily_extent_hires.png?ts=1",
+            source_url="https://nsidc.org/sea-ice-today",
+            fetched_at=fetched_at,
+        )
+        insert_image(
+            image_type="seaice_arctic_concentration",
+            source="NSIDC",
+            title="NSIDC Arctic Sea Ice Concentration 2026-05-11 00:00",
+            image_url="https://nsidc.org/data/seaice_index/images/daily_images/N_daily_concentration_hires.png?ts=1",
+            source_url="https://nsidc.org/sea-ice-today",
+            fetched_at=fetched_at,
+        )
+        insert_image(
+            image_type="seaice_arctic_timeseries",
+            source="NSIDC",
+            title="NSIDC Arctic Sea Ice Extent Time Series 2026-05-11 00:00",
+            image_url="https://nsidc.org/data/seaice_index/images/daily_images/N_iqr_timeseries.png?ts=1",
+            source_url="https://nsidc.org/sea-ice-today",
+            fetched_at=fetched_at,
+        )
+
+        with patch("src.api.images.fetch_seaice_arctic_images") as mock_fetch:
+            response = self.client.get("/api/images/latest?type=seaice_arctic")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["image_type"], "seaice_arctic")
+        mock_fetch.assert_not_called()
 
     def test_latest_seaice_antarctic_returns_aggregate_payload_with_extent_thumbnail(self):
         insert_image(
