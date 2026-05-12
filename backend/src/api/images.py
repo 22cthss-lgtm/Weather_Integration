@@ -1,8 +1,9 @@
 import re
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
 
+from ..config import FETCH_INTERVAL_MINUTES
 from ..jobs import (
     fetch_cimss_steering_flow_images,
     fetch_cimss_wind_analysis_images,
@@ -21,6 +22,7 @@ from ..models.image_repository import get_image_history, get_latest_image, get_l
 
 
 images_bp = Blueprint("images", __name__)
+latest_image_ttl = timedelta(minutes=FETCH_INTERVAL_MINUTES)
 image_time_regex = re.compile(r"(?P<image_time>\d{4}-\d{2}-\d{2} \d{2}:\d{2})$")
 image_types_with_embedded_time = {
     "satellite",
@@ -45,6 +47,65 @@ image_types_with_embedded_time = {
     "cimss_steering_flow_250_850mb",
     "cimss_steering_flow_200_700mb",
 }
+grouped_image_types = {
+    "seaice_arctic": ["seaice_arctic_extent", "seaice_arctic_concentration", "seaice_arctic_timeseries"],
+    "seaice_antarctic": [
+        "seaice_antarctic_extent",
+        "seaice_antarctic_concentration",
+        "seaice_antarctic_timeseries",
+    ],
+    "cimss_wind_analysis": ["cimss_wind_shear", "cimss_850mb_vorticity"],
+    "cimss_steering_flow": [
+        "cimss_steering_flow_700_850mb",
+        "cimss_steering_flow_500_850mb",
+        "cimss_steering_flow_400_850mb",
+        "cimss_steering_flow_300_850mb",
+        "cimss_steering_flow_250_850mb",
+        "cimss_steering_flow_200_700mb",
+    ],
+}
+
+
+def parse_fetched_at(fetched_at: str | None) -> datetime | None:
+    if not fetched_at:
+        return None
+
+    try:
+        parsed = datetime.fromisoformat(fetched_at)
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def is_fresh_image(image: dict | None) -> bool:
+    fetched_at = parse_fetched_at(image.get("fetched_at") if image else None)
+    if fetched_at is None:
+        return False
+    return datetime.now(timezone.utc) - fetched_at <= latest_image_ttl
+
+
+def latest_records_for_request(image_type: str) -> list[dict] | None:
+    child_image_types = grouped_image_types.get(image_type)
+    if child_image_types is not None:
+        images = [get_latest_image(child_image_type) for child_image_type in child_image_types]
+        if any(image is None for image in images):
+            return None
+        return [image for image in images if image is not None]
+
+    image = get_latest_image(image_type)
+    if image is None:
+        return None
+    return [image]
+
+
+def should_fetch_latest_image(image_type: str) -> bool:
+    latest_records = latest_records_for_request(image_type)
+    if latest_records is None:
+        return True
+    return not all(is_fresh_image(image) for image in latest_records)
 
 
 def serialize_image(image: dict) -> dict:
@@ -139,30 +200,31 @@ def latest_image():
     if not image_type:
         return jsonify({"error": "Query parameter 'type' is required."}), 400
 
-    if image_type == "satellite":
-        fetch_satellite_image()
-    elif image_type == "radar":
-        fetch_radar_image()
-    elif image_type == "temperature":
-        fetch_temperature_image()
-    elif image_type == "rainfall":
-        fetch_rainfall_image()
-    elif image_type == "weather_chart":
-        fetch_weather_chart_image()
-    elif image_type == "tchp":
-        fetch_tchp_image()
-    elif image_type == "sst":
-        fetch_sst_image()
-    elif image_type == "850hpa":
-        fetch_850hpa_image()
-    elif image_type == "seaice_arctic":
-        fetch_seaice_arctic_images()
-    elif image_type == "seaice_antarctic":
-        fetch_seaice_antarctic_images()
-    elif image_type == "cimss_wind_analysis":
-        fetch_cimss_wind_analysis_images()
-    elif image_type == "cimss_steering_flow":
-        fetch_cimss_steering_flow_images()
+    if should_fetch_latest_image(image_type):
+        if image_type == "satellite":
+            fetch_satellite_image()
+        elif image_type == "radar":
+            fetch_radar_image()
+        elif image_type == "temperature":
+            fetch_temperature_image()
+        elif image_type == "rainfall":
+            fetch_rainfall_image()
+        elif image_type == "weather_chart":
+            fetch_weather_chart_image()
+        elif image_type == "tchp":
+            fetch_tchp_image()
+        elif image_type == "sst":
+            fetch_sst_image()
+        elif image_type == "850hpa":
+            fetch_850hpa_image()
+        elif image_type == "seaice_arctic":
+            fetch_seaice_arctic_images()
+        elif image_type == "seaice_antarctic":
+            fetch_seaice_antarctic_images()
+        elif image_type == "cimss_wind_analysis":
+            fetch_cimss_wind_analysis_images()
+        elif image_type == "cimss_steering_flow":
+            fetch_cimss_steering_flow_images()
 
     if image_type == "seaice_arctic":
         image = serialize_seaice_arctic_payload()

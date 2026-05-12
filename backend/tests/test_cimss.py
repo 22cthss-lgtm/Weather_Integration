@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -253,6 +254,60 @@ class LatestCIMSSWindAnalysisApiTests(unittest.TestCase):
         self.assertEqual(response.json["images"][4]["image_type"], "cimss_steering_flow_250_850mb")
         self.assertEqual(response.json["images"][5]["image_type"], "cimss_steering_flow_200_700mb")
         mock_fetch.assert_called_once_with()
+
+    def test_latest_cimss_steering_flow_skips_fetch_when_all_child_records_are_fresh(self):
+        source_url = "https://tropic.ssec.wisc.edu/real-time/dlmmain.php?&basin=westpac&sat=wgms&prod=dlm1&zoom=&time="
+        fetched_at = datetime.now(timezone.utc).isoformat()
+        image_entries = [
+            (
+                "cimss_steering_flow_700_850mb",
+                "CIMSS Steering Flow 700 - 850 mb 2026-05-12 00:00",
+                "https://tropic.ssec.wisc.edu/real-time/westpac/winds/wgmsdlm1.GIF?ts=1",
+            ),
+            (
+                "cimss_steering_flow_500_850mb",
+                "CIMSS Steering Flow 500 - 850 mb 2026-05-12 00:00",
+                "https://tropic.ssec.wisc.edu/real-time/westpac/winds/wgmsdlm2.GIF?ts=1",
+            ),
+            (
+                "cimss_steering_flow_400_850mb",
+                "CIMSS Steering Flow 400 - 850 mb 2026-05-12 00:00",
+                "https://tropic.ssec.wisc.edu/real-time/westpac/winds/wgmsdlm3.GIF?ts=1",
+            ),
+            (
+                "cimss_steering_flow_300_850mb",
+                "CIMSS Steering Flow 300 - 850 mb 2026-05-12 00:00",
+                "https://tropic.ssec.wisc.edu/real-time/westpac/winds/wgmsdlm4.GIF?ts=1",
+            ),
+            (
+                "cimss_steering_flow_250_850mb",
+                "CIMSS Steering Flow 250 - 850 mb 2026-05-12 00:00",
+                "https://tropic.ssec.wisc.edu/real-time/westpac/winds/wgmsdlm5.GIF?ts=1",
+            ),
+            (
+                "cimss_steering_flow_200_700mb",
+                "CIMSS Steering Flow 200 - 700 mb 2026-05-12 00:00",
+                "https://tropic.ssec.wisc.edu/real-time/westpac/winds/wgmsdlm6.GIF?ts=1",
+            ),
+        ]
+
+        for image_type, title, image_url in image_entries:
+            insert_image(
+                image_type=image_type,
+                source="CIMSS",
+                title=title,
+                image_url=image_url,
+                source_url=source_url,
+                fetched_at=fetched_at,
+            )
+
+        with patch("src.api.images.fetch_cimss_steering_flow_images") as mock_fetch:
+            response = self.client.get("/api/images/latest?type=cimss_steering_flow")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["image_type"], "cimss_steering_flow")
+        self.assertEqual(len(response.json["images"]), 6)
+        mock_fetch.assert_not_called()
 
 
 if __name__ == "__main__":
