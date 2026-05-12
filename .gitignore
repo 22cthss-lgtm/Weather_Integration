@@ -10,8 +10,12 @@ dist/
 .vite/
 
 backend/data/
+Microsoft/
 
 checkpoint.md
+FAQ_checkpoint.md
+performance_check.md
+StorageAndDB_check.md
 
 .DS_Store
 Thumbs.db
