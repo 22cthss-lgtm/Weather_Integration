@@ -54,11 +54,11 @@ def fetch_sst_image() -> None:
 
 
 def fetch_seaice_arctic_images() -> None:
-    save_payloads(NSIDCService().fetch())
+    save_payloads(NSIDCService().fetch_arctic())
 
 
 def fetch_seaice_antarctic_images() -> None:
-    save_payloads(NSIDCService().fetch())
+    save_payloads(NSIDCService().fetch_antarctic())
 
 
 def fetch_cimss_wind_analysis_images() -> None:

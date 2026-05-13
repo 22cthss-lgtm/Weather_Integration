@@ -7,7 +7,8 @@ from unittest.mock import patch
 from flask import Flask
 
 from src.api.images import images_bp
-from src.db import init_db
+from src.db import get_connection, init_db
+from src.jobs import fetch_seaice_antarctic_images, fetch_seaice_arctic_images
 from src.models.image_repository import insert_image
 from src.services.nsidc_service import NSIDCService
 
@@ -80,6 +81,183 @@ class NSIDCServiceTests(unittest.TestCase):
         self.assertEqual(payloads[0].title, "NSIDC Arctic Sea Ice Extent 2026-03-08 00:00")
         self.assertEqual(payloads[1].title, "NSIDC Arctic Sea Ice Concentration 2026-04-06 00:00")
         self.assertEqual(payloads[2].title, "NSIDC Arctic Sea Ice Extent Time Series 2026-04-07 00:00")
+
+    def test_fetch_arctic_emits_only_arctic_payloads(self):
+        service = NSIDCService()
+
+        with (
+            patch.object(
+                service,
+                "resolve_latest_arctic_sea_ice_images",
+                return_value={
+                    "seaice_arctic_extent": {
+                        "image_url": service.extent_image_url,
+                        "image_time": "2026-03-08 00:00",
+                    },
+                    "seaice_arctic_concentration": {
+                        "image_url": service.concentration_image_url,
+                        "image_time": "2026-04-06 00:00",
+                    },
+                    "seaice_arctic_timeseries": {
+                        "image_url": service.timeseries_image_url,
+                        "image_time": "2026-04-07 00:00",
+                    },
+                },
+            ),
+            patch.object(service, "resolve_latest_antarctic_sea_ice_images") as mock_antarctic,
+        ):
+            payloads = list(service.fetch_arctic())
+
+        self.assertEqual([payload.image_type for payload in payloads], [
+            "seaice_arctic_extent",
+            "seaice_arctic_concentration",
+            "seaice_arctic_timeseries",
+        ])
+        mock_antarctic.assert_not_called()
+
+    def test_fetch_antarctic_emits_only_antarctic_payloads(self):
+        service = NSIDCService()
+
+        with (
+            patch.object(service, "resolve_latest_arctic_sea_ice_images") as mock_arctic,
+            patch.object(
+                service,
+                "resolve_latest_antarctic_sea_ice_images",
+                return_value={
+                    "seaice_antarctic_extent": {
+                        "image_url": service.antarctic_extent_image_url,
+                        "image_time": "2026-04-11 00:00",
+                    },
+                    "seaice_antarctic_concentration": {
+                        "image_url": service.antarctic_concentration_image_url,
+                        "image_time": "2026-04-12 00:00",
+                    },
+                    "seaice_antarctic_timeseries": {
+                        "image_url": service.antarctic_timeseries_image_url,
+                        "image_time": "2026-04-13 00:00",
+                    },
+                },
+            ),
+        ):
+            payloads = list(service.fetch_antarctic())
+
+        self.assertEqual([payload.image_type for payload in payloads], [
+            "seaice_antarctic_extent",
+            "seaice_antarctic_concentration",
+            "seaice_antarctic_timeseries",
+        ])
+        mock_arctic.assert_not_called()
+
+
+class NSIDCJobTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.database_path = Path(self.temp_dir.name) / "weather.db"
+
+        self.db_path_patcher = patch("src.db.DATABASE_PATH", self.database_path)
+        self.db_path_patcher.start()
+        init_db()
+
+    def tearDown(self):
+        self.db_path_patcher.stop()
+        self.temp_dir.cleanup()
+
+    def image_types(self):
+        with get_connection() as conn:
+            rows = conn.execute(
+                "SELECT image_type FROM images ORDER BY image_type",
+            ).fetchall()
+        return [row["image_type"] for row in rows]
+
+    def test_fetch_seaice_arctic_images_inserts_only_arctic_records(self):
+        with (
+            patch(
+                "src.jobs.NSIDCService.resolve_latest_arctic_sea_ice_images",
+                return_value={
+                    "seaice_arctic_extent": {
+                        "image_url": NSIDCService.extent_image_url,
+                        "image_time": "2026-03-08 00:00",
+                    },
+                    "seaice_arctic_concentration": {
+                        "image_url": NSIDCService.concentration_image_url,
+                        "image_time": "2026-04-06 00:00",
+                    },
+                    "seaice_arctic_timeseries": {
+                        "image_url": NSIDCService.timeseries_image_url,
+                        "image_time": "2026-04-07 00:00",
+                    },
+                },
+            ),
+            patch(
+                "src.jobs.NSIDCService.resolve_latest_antarctic_sea_ice_images",
+                return_value={
+                    "seaice_antarctic_extent": {
+                        "image_url": NSIDCService.antarctic_extent_image_url,
+                        "image_time": "2026-04-11 00:00",
+                    },
+                    "seaice_antarctic_concentration": {
+                        "image_url": NSIDCService.antarctic_concentration_image_url,
+                        "image_time": "2026-04-12 00:00",
+                    },
+                    "seaice_antarctic_timeseries": {
+                        "image_url": NSIDCService.antarctic_timeseries_image_url,
+                        "image_time": "2026-04-13 00:00",
+                    },
+                },
+            ),
+        ):
+            fetch_seaice_arctic_images()
+
+        self.assertEqual(self.image_types(), [
+            "seaice_arctic_concentration",
+            "seaice_arctic_extent",
+            "seaice_arctic_timeseries",
+        ])
+
+    def test_fetch_seaice_antarctic_images_inserts_only_antarctic_records(self):
+        with (
+            patch(
+                "src.jobs.NSIDCService.resolve_latest_arctic_sea_ice_images",
+                return_value={
+                    "seaice_arctic_extent": {
+                        "image_url": NSIDCService.extent_image_url,
+                        "image_time": "2026-03-08 00:00",
+                    },
+                    "seaice_arctic_concentration": {
+                        "image_url": NSIDCService.concentration_image_url,
+                        "image_time": "2026-04-06 00:00",
+                    },
+                    "seaice_arctic_timeseries": {
+                        "image_url": NSIDCService.timeseries_image_url,
+                        "image_time": "2026-04-07 00:00",
+                    },
+                },
+            ),
+            patch(
+                "src.jobs.NSIDCService.resolve_latest_antarctic_sea_ice_images",
+                return_value={
+                    "seaice_antarctic_extent": {
+                        "image_url": NSIDCService.antarctic_extent_image_url,
+                        "image_time": "2026-04-11 00:00",
+                    },
+                    "seaice_antarctic_concentration": {
+                        "image_url": NSIDCService.antarctic_concentration_image_url,
+                        "image_time": "2026-04-12 00:00",
+                    },
+                    "seaice_antarctic_timeseries": {
+                        "image_url": NSIDCService.antarctic_timeseries_image_url,
+                        "image_time": "2026-04-13 00:00",
+                    },
+                },
+            ),
+        ):
+            fetch_seaice_antarctic_images()
+
+        self.assertEqual(self.image_types(), [
+            "seaice_antarctic_concentration",
+            "seaice_antarctic_extent",
+            "seaice_antarctic_timeseries",
+        ])
 
 
 class LatestSeaIceApiTests(unittest.TestCase):

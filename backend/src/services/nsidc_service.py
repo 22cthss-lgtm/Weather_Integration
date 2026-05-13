@@ -155,6 +155,10 @@ class NSIDCService(BaseImageService):
         )
 
     def fetch(self):
+        yield from self.fetch_arctic()
+        yield from self.fetch_antarctic()
+
+    def fetch_arctic(self):
         yield from self.emit_payloads(
             self.resolve_latest_arctic_sea_ice_images(),
             {
@@ -164,6 +168,8 @@ class NSIDCService(BaseImageService):
             },
             ("seaice_arctic_extent", "seaice_arctic_concentration", "seaice_arctic_timeseries"),
         )
+
+    def fetch_antarctic(self):
         yield from self.emit_payloads(
             self.resolve_latest_antarctic_sea_ice_images(),
             {
