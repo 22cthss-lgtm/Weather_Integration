@@ -24,7 +24,7 @@ function getSeaIceEntry(images, tab) {
   return images.find((entry) => entry.image_type === tab.imageType) || images[0];
 }
 
-export default function SeaIcePage({ type = "seaice_arctic" }) {
+export default function SeaIcePage({ type }) {
   const collection = SEA_ICE_COLLECTIONS[type];
   const [image, setImage] = useState(null);
   const [error, setError] = useState("");
