@@ -206,6 +206,18 @@ nav a {
   height: auto;
 }
 
+.image-detail-page-compact > .detail-image {
+  display: block;
+  width: 50%;
+  max-width: 50%;
+  margin: 0 auto;
+}
+
+.image-detail-page-tchp > .detail-image {
+  width: 75%;
+  max-width: 75%;
+}
+
 #polar-and-climate-monitoring .card img {
   height: 450px;
   object-fit: contain;
