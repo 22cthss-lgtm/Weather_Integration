@@ -13,6 +13,7 @@ class ImagePayload:
     image_url: str
     source_url: str
     fetched_at: str
+    image_time: str | None = None
 
 
 class BaseImageService:
@@ -21,7 +22,14 @@ class BaseImageService:
     def fetch(self) -> Iterable[ImagePayload]:
         raise NotImplementedError
 
-    def build_payload(self, image_type: str, title: str, image_url: str, source_url: str) -> ImagePayload:
+    def build_payload(
+        self,
+        image_type: str,
+        title: str,
+        image_url: str,
+        source_url: str,
+        image_time: str | None = None,
+    ) -> ImagePayload:
         return ImagePayload(
             image_type=image_type,
             source=self.source_name,
@@ -29,6 +37,7 @@ class BaseImageService:
             image_url=image_url,
             source_url=source_url,
             fetched_at=datetime.now(timezone.utc).isoformat(),
+            image_time=image_time,
         )
 
     def request_placeholder(self, url: str) -> None:

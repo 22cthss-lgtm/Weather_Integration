@@ -26,7 +26,8 @@ def init_db() -> None:
                 title TEXT NOT NULL,
                 image_url TEXT NOT NULL,
                 source_url TEXT NOT NULL,
-                fetched_at TEXT NOT NULL
+                fetched_at TEXT NOT NULL,
+                image_time TEXT
             );
 
             CREATE INDEX IF NOT EXISTS idx_images_type_fetched_at
@@ -65,5 +66,19 @@ def init_db() -> None:
 
             CREATE INDEX IF NOT EXISTS idx_faqs_pinned_updated_at
             ON faqs (is_pinned DESC, updated_at DESC);
+            """
+        )
+
+        columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(images)").fetchall()
+        }
+        if "image_time" not in columns:
+            conn.execute("ALTER TABLE images ADD COLUMN image_time TEXT")
+
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_images_type_image_time
+            ON images (image_type, image_time DESC)
             """
         )

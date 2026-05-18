@@ -8,12 +8,45 @@ export async function fetchLatestImage(type) {
   return response.json();
 }
 
-export async function fetchImageHistory(type) {
-  const response = await fetch(`${API_BASE_URL}/api/images/history?type=${encodeURIComponent(type)}`);
+export async function fetchImageHistory(type, { date = "", limit = "" } = {}) {
+  const params = new URLSearchParams({ type });
+  if (date) {
+    params.set("date", date);
+  }
+  if (limit) {
+    params.set("limit", String(limit));
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/images/history?${params.toString()}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch history for ${type}`);
   }
   return response.json();
+}
+
+export async function backfillImages(type, { range = "today", date = "" } = {}) {
+  const params = new URLSearchParams({ type });
+  if (range) {
+    params.set("range", range);
+  }
+  if (date) {
+    params.set("date", date);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/images/backfill?${params.toString()}`, {
+    method: "POST",
+  });
+  return parseJson(response, `Failed to backfill images for ${type}`);
+}
+
+export async function fetchDailyImages(type, { date = "" } = {}) {
+  const params = new URLSearchParams({ type });
+  if (date) {
+    params.set("date", date);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/images/daily?${params.toString()}`);
+  return parseJson(response, `Failed to fetch daily images for ${type}`);
 }
 
 export async function fetchDocs() {

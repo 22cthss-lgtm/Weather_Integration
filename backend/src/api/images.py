@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
 
@@ -8,6 +8,8 @@ from ..jobs import (
     fetch_cimss_steering_flow_images,
     fetch_cimss_wind_analysis_images,
     fetch_850hpa_image,
+    backfill_rainfall_images,
+    rainfall_daily_representative_slots,
     fetch_radar_image,
     fetch_rainfall_image,
     fetch_seaice_arctic_images,
@@ -18,7 +20,14 @@ from ..jobs import (
     fetch_tchp_image,
     fetch_weather_chart_image,
 )
-from ..models.image_repository import get_image_history, get_latest_image, get_latest_image_excluding_prefixes
+from ..models.image_repository import (
+    get_image_history,
+    get_image_history_by_date,
+    get_image_by_image_time,
+    get_latest_image,
+    get_latest_image_by_image_time,
+    get_latest_image_excluding_prefixes,
+)
 
 
 images_bp = Blueprint("images", __name__)
@@ -99,7 +108,10 @@ def latest_records_for_request(image_type: str) -> list[dict] | None:
             return None
         return [image for image in images if image is not None]
 
-    image = get_latest_image(image_type)
+    if image_type == "rainfall":
+        image = get_latest_image_by_image_time(image_type)
+    else:
+        image = get_latest_image(image_type)
     if image is None:
         return None
     return [image]
@@ -114,6 +126,9 @@ def should_fetch_latest_image(image_type: str) -> bool:
 
 def serialize_image(image: dict) -> dict:
     serialized = dict(image)
+    if serialized.get("image_time"):
+        return serialized
+
     if serialized.get("image_type") in image_types_with_embedded_time:
         match = image_time_regex.search(serialized.get("title", ""))
         if match:
@@ -253,6 +268,8 @@ def latest_image():
 
     if image_type == "radar":
         image = get_latest_image_excluding_prefixes(image_type, ["https://placehold.co/"])
+    elif image_type == "rainfall":
+        image = get_latest_image_by_image_time(image_type)
     else:
         image = get_latest_image(image_type)
 
@@ -267,5 +284,68 @@ def image_history():
     if not image_type:
         return jsonify({"error": "Query parameter 'type' is required."}), 400
 
+    image_date = request.args.get("date", "").strip()
+    if image_date:
+        try:
+            date.fromisoformat(image_date)
+        except ValueError:
+            return jsonify({"error": "Query parameter 'date' must use YYYY-MM-DD."}), 400
+        return jsonify([serialize_image(image) for image in get_image_history_by_date(image_type, image_date)])
+
     limit = request.args.get("limit", default=20, type=int)
-    return jsonify(get_image_history(image_type, limit))
+    return jsonify([serialize_image(image) for image in get_image_history(image_type, limit)])
+
+
+@images_bp.get("/daily")
+def daily_images():
+    image_type = request.args.get("type", "").strip()
+    if image_type != "rainfall":
+        return jsonify({"error": "Daily representatives are only supported for rainfall."}), 400
+
+    image_date = request.args.get("date", "").strip()
+    if image_date:
+        try:
+            target_date = date.fromisoformat(image_date)
+        except ValueError:
+            return jsonify({"error": "Query parameter 'date' must use YYYY-MM-DD."}), 400
+    else:
+        target_date = datetime.now(timezone.utc).date()
+
+    representatives = []
+    for slot in rainfall_daily_representative_slots(target_date):
+        image_time = slot["image_time"].strftime("%Y-%m-%d %H:%M")
+        image = get_image_by_image_time("rainfall", image_time)
+        if image is None:
+            continue
+        serialized = serialize_image(image)
+        serialized["label"] = slot["label"]
+        serialized["represented_date"] = slot["represented_date"]
+        representatives.append(serialized)
+
+    return jsonify(representatives)
+
+
+@images_bp.post("/backfill")
+def backfill_images():
+    image_type = request.args.get("type", "").strip()
+    if image_type != "rainfall":
+        return jsonify({"error": "Backfill is only supported for rainfall."}), 400
+
+    range_name = request.args.get("range", "today").strip() or "today"
+    image_date = request.args.get("date", "").strip()
+    parsed_date = None
+    if image_date:
+        try:
+            parsed_date = date.fromisoformat(image_date)
+        except ValueError:
+            return jsonify({"error": "Query parameter 'date' must use YYYY-MM-DD."}), 400
+
+    if range_name != "today" and parsed_date is None:
+        return jsonify({"error": "Only range=today or date=YYYY-MM-DD is supported."}), 400
+
+    try:
+        summary = backfill_rainfall_images(range_name=range_name, image_date=parsed_date)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    return jsonify(summary)

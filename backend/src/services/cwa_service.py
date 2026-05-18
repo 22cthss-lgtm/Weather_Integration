@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import re
 from zoneinfo import ZoneInfo
 
@@ -48,6 +48,7 @@ class CWAService(BaseImageService):
     radar_publish_delay_minutes = 20
     temperature_publish_delay_minutes = 20
     rainfall_publish_delay_minutes = 20
+    rainfall_slot_minutes = 30
 
     @staticmethod
     def no_cache_headers() -> dict[str, str]:
@@ -233,6 +234,35 @@ class CWAService(BaseImageService):
             publish_delay_minutes=self.rainfall_publish_delay_minutes,
         )
 
+    def build_rainfall_image_url(self, image_time: datetime) -> str:
+        timestamp = image_time.astimezone(self.satellite_timezone).strftime("%Y-%m-%d_%H%M")
+        filename = self.rainfall_image_pattern.format(timestamp=timestamp)
+        return f"{self.rainfall_image_prefix}/{filename}"
+
+    def rainfall_time_slots_for_date(self, image_date: date, now: datetime | None = None) -> list[datetime]:
+        current_time = now or datetime.now(self.satellite_timezone)
+        current_time = current_time.astimezone(self.satellite_timezone).replace(second=0, microsecond=0)
+        start = datetime.combine(image_date, datetime.min.time(), tzinfo=self.satellite_timezone) + timedelta(
+            minutes=self.rainfall_slot_minutes
+        )
+        end = datetime.combine(image_date, datetime.max.time(), tzinfo=self.satellite_timezone).replace(
+            second=0,
+            microsecond=0,
+        )
+
+        if image_date == current_time.date():
+            publishable_time = current_time - timedelta(minutes=self.rainfall_publish_delay_minutes)
+            end = publishable_time - timedelta(minutes=publishable_time.minute % self.rainfall_slot_minutes)
+        elif image_date > current_time.date():
+            return []
+
+        slots = []
+        candidate_time = start
+        while candidate_time <= end:
+            slots.append(candidate_time)
+            candidate_time += timedelta(minutes=self.rainfall_slot_minutes)
+        return slots
+
     def fetch_rainfall(self):
         resolved = self.resolve_rainfall_image_url()
         if resolved is None:
@@ -244,6 +274,7 @@ class CWAService(BaseImageService):
             f"CWA Accumulated Rainfall {display_time}",
             image_url,
             self.rainfall_source_url,
+            image_time=display_time,
         )
 
     def resolve_direct_weather_chart_image_url(self) -> tuple[str, str | None] | None:
