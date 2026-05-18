@@ -5,6 +5,7 @@ import DocsPage from "./pages/DocsPage";
 import FaqPage from "./pages/FaqPage";
 import ImagePage from "./pages/ImagePage";
 import SeaIcePage from "./pages/SeaIcePage";
+import CimssPage from "./pages/CimssPage";
 
 export default function App() {
   const [faqResetToken, setFaqResetToken] = useState(0);
@@ -30,6 +31,8 @@ export default function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/images/seaice_arctic" element={<SeaIcePage type="seaice_arctic" />} />
           <Route path="/images/seaice_antarctic" element={<SeaIcePage type="seaice_antarctic" />} />
+          <Route path="/images/cimss_wind_analysis" element={<CimssPage type="cimss_wind_analysis" />} />
+          <Route path="/images/cimss_steering_flow" element={<CimssPage type="cimss_steering_flow" />} />
           <Route path="/images/:type" element={<ImagePage />} />
           <Route path="/docs" element={<DocsPage />} />
           <Route path="/faq" element={<FaqPage resetToken={faqResetToken} />} />
