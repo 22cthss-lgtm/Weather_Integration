@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
-import { backfillImages, fetchDailyImages, fetchImageHistory, fetchLatestImage } from "../api";
+import { backfillImages, fetchDailyImages, fetchImageHistory, fetchLatestImage, fetchRainfallTop } from "../api";
+
+const rainfallMetrics = [
+  { key: "10min", label: "10min" },
+  { key: "1hr", label: "1hr" },
+  { key: "3hr", label: "3hr" },
+  { key: "6hr", label: "6hr" },
+  { key: "12hr", label: "12hr" },
+  { key: "24hr", label: "24hr" },
+  { key: "1day", label: "Previous 1 Day" },
+  { key: "2days", label: "Previous 2 Days" },
+];
 
 function getImageDate(entry) {
   return entry?.image_time?.slice(0, 10) || "";
@@ -16,6 +27,10 @@ function formatBackfillSummary(summary) {
 export default function RainFallPage() {
   const [image, setImage] = useState(null);
   const [error, setError] = useState("");
+  const [selectedMetric, setSelectedMetric] = useState("10min");
+  const [rainfallTop, setRainfallTop] = useState(null);
+  const [rainfallTopError, setRainfallTopError] = useState("");
+  const [isRainfallTopLoading, setIsRainfallTopLoading] = useState(false);
   const [rainfallHistory, setRainfallHistory] = useState([]);
   const [selectedRainfallTime, setSelectedRainfallTime] = useState("");
   const [rainfallDailyImages, setRainfallDailyImages] = useState([]);
@@ -57,6 +72,25 @@ export default function RainFallPage() {
 
     load();
   }, []);
+
+  useEffect(() => {
+    async function loadRainfallTop() {
+      setIsRainfallTopLoading(true);
+      setRainfallTopError("");
+
+      try {
+        const ranking = await fetchRainfallTop(selectedMetric);
+        setRainfallTop(ranking);
+      } catch (err) {
+        setRainfallTop(null);
+        setRainfallTopError(err.message);
+      } finally {
+        setIsRainfallTopLoading(false);
+      }
+    }
+
+    loadRainfallTop();
+  }, [selectedMetric]);
 
   async function handleBackfillRainfall() {
     setIsBackfilling(true);
@@ -139,6 +173,65 @@ export default function RainFallPage() {
           </section>
         ) : null}
       </div>
+      <section className="rainfall-monitoring-section" aria-labelledby="rainfall-monitoring-heading">
+        <div className="rainfall-monitoring-header">
+          <div>
+            <h3 id="rainfall-monitoring-heading">Real-time Rainfall Monitoring</h3>
+            <p>Top 10 rainfall observation stations from CWA Open Data.</p>
+          </div>
+          {rainfallTop?.fetched_at ? <p>Data fetched: {rainfallTop.fetched_at}</p> : null}
+        </div>
+        <div className="image-tabs rainfall-metric-tabs" role="tablist" aria-label="Rainfall ranking metric">
+          {rainfallMetrics.map((metric) => (
+            <button
+              className={`image-tab ${selectedMetric === metric.key ? "active" : ""}`}
+              type="button"
+              role="tab"
+              aria-selected={selectedMetric === metric.key}
+              key={metric.key}
+              onClick={() => setSelectedMetric(metric.key)}
+            >
+              {metric.label}
+            </button>
+          ))}
+        </div>
+        <div className="rainfall-ranking-panel" role="tabpanel">
+          {isRainfallTopLoading ? (
+            <p className="status-message">Loading rainfall ranking...</p>
+          ) : rainfallTopError ? (
+            <p className="error-message">{rainfallTopError}</p>
+          ) : rainfallTop?.items?.length ? (
+            <div className="rainfall-ranking-table-wrap">
+              <table className="rainfall-ranking-table">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Station</th>
+                    <th>County</th>
+                    <th>Town</th>
+                    <th>Rainfall</th>
+                    <th>Observed At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rainfallTop.items.map((item) => (
+                    <tr key={`${item.station_id}-${item.observed_at}`}>
+                      <td>{item.rank}</td>
+                      <td>{item.station_name}</td>
+                      <td>{item.county || "-"}</td>
+                      <td>{item.town || "-"}</td>
+                      <td>{Number(item.rainfall).toFixed(1)} mm</td>
+                      <td>{item.observed_at}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="status-message">No rainfall observation data available.</p>
+          )}
+        </div>
+      </section>
     </section>
   );
 }

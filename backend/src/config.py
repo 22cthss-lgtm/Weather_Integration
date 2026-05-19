@@ -1,11 +1,24 @@
 from pathlib import Path
+import os
+
+from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def load_backend_env(env_path: Path | str = BASE_DIR / ".env") -> None:
+    load_dotenv(dotenv_path=env_path)
+
+
+load_backend_env()
+
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 DATABASE_PATH = DATA_DIR / "weather.db"
+CWA_API_KEY = os.getenv("CWA_API_KEY", "")
+RAINFALL_OBSERVATION_TTL_MINUTES = 11
 
 DEFAULT_IMAGE_TTL_MINUTES = 24 * 60
 IMAGE_TYPE_TTL_MINUTES = {

@@ -49,6 +49,12 @@ export async function fetchDailyImages(type, { date = "" } = {}) {
   return parseJson(response, `Failed to fetch daily images for ${type}`);
 }
 
+export async function fetchRainfallTop(metric = "10min") {
+  const params = new URLSearchParams({ metric });
+  const response = await fetch(`${API_BASE_URL}/api/rainfall/top?${params.toString()}`);
+  return parseJson(response, `Failed to fetch rainfall top ranking for ${metric}`);
+}
+
 export async function fetchDocs() {
   const response = await fetch(`${API_BASE_URL}/api/docs`);
   if (!response.ok) {

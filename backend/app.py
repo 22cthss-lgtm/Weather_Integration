@@ -3,6 +3,7 @@ from flask import Flask
 from src.api.docs import docs_bp
 from src.api.faqs import faq_bp
 from src.api.images import images_bp
+from src.api.rainfall import rainfall_bp
 from src.db import init_db
 from src.jobs import bootstrap_images
 from src.seed import seed_docs, seed_faqs
@@ -16,6 +17,7 @@ def create_app() -> Flask:
     seed_faqs()
     bootstrap_images()
     app.register_blueprint(images_bp, url_prefix="/api/images")
+    app.register_blueprint(rainfall_bp, url_prefix="/api/rainfall")
     app.register_blueprint(docs_bp, url_prefix="/api/docs")
     app.register_blueprint(faq_bp, url_prefix="/api/faqs")
 
