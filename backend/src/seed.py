@@ -1,23 +1,4 @@
-from .models.doc_repository import create_doc, list_docs
 from .models.faq_repository import create_faq, ensure_category, list_faqs
-
-
-def seed_docs() -> None:
-    if list_docs():
-        return
-
-    create_doc(
-        title="Platform Overview",
-        slug="platform-overview",
-        content=(
-            "# Platform Overview\n\n"
-            "This demo site aggregates weather and ocean imagery.\n\n"
-            "## Included APIs\n\n"
-            "- `/api/images/latest?type=...`\n"
-            "- `/api/images/history?type=...`\n"
-            "- `/api/docs`\n"
-        ),
-    )
 
 
 def seed_faqs() -> None:

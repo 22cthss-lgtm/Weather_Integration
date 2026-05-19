@@ -1,7 +1,6 @@
 import { Link, Route, Routes } from "react-router-dom";
 import { useState } from "react";
 import DashboardPage from "./pages/DashboardPage";
-import DocsPage from "./pages/DocsPage";
 import FaqPage from "./pages/FaqPage";
 import ImagePage from "./pages/ImagePage";
 import SeaIcePage from "./pages/SeaIcePage";
@@ -21,7 +20,6 @@ export default function App() {
         </h1>
         <nav>
           <Link to="/">Dashboard</Link>
-          <Link to="/docs">Docs</Link>
           <Link to="/faq" onClick={() => setFaqResetToken((current) => current + 1)}>
             FAQ
           </Link>
@@ -36,7 +34,6 @@ export default function App() {
           <Route path="/images/cimss_steering_flow" element={<CimssPage type="cimss_steering_flow" />} />
           <Route path="/images/rainfall" element={<RainFallPage />} />
           <Route path="/images/:type" element={<ImagePage />} />
-          <Route path="/docs" element={<DocsPage />} />
           <Route path="/faq" element={<FaqPage resetToken={faqResetToken} />} />
         </Routes>
       </main>

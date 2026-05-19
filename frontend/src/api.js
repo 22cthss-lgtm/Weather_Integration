@@ -55,22 +55,6 @@ export async function fetchRainfallTop(metric = "10min") {
   return parseJson(response, `Failed to fetch rainfall top ranking for ${metric}`);
 }
 
-export async function fetchDocs() {
-  const response = await fetch(`${API_BASE_URL}/api/docs`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch docs");
-  }
-  return response.json();
-}
-
-export async function fetchDoc(id) {
-  const response = await fetch(`${API_BASE_URL}/api/docs/${id}`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch doc ${id}`);
-  }
-  return response.json();
-}
-
 async function parseJson(response, fallbackMessage) {
   let payload = null;
 

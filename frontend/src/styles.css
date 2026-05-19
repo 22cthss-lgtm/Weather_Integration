@@ -233,12 +233,6 @@ nav a {
   margin: 0 auto;
 }
 
-.docs-layout {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 24px;
-}
-
 .image-collection {
   display: grid;
   gap: 24px;
@@ -970,10 +964,6 @@ nav a {
     bottom: 16px;
     width: 44px;
     height: 44px;
-  }
-
-  .docs-layout {
-    grid-template-columns: 1fr;
   }
 
   .faq-page-header,
