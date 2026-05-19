@@ -24,6 +24,37 @@ function formatBackfillSummary(summary) {
   return `Backfill complete: ${summary.inserted} inserted, ${summary.skipped_existing} already existed, ${summary.missing} missing, ${summary.failed} failed.`;
 }
 
+function formatObservedAt(observedAt) {
+  if (!observedAt) {
+    return "-";
+  }
+
+  return observedAt.slice(0, 16).replace("T", " ");
+}
+
+  function formatDateTimeTaiwan(value) {
+    if (!value) {
+      return "-";
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+
+    return new Intl.DateTimeFormat("zh-TW", {
+      timeZone: "Asia/Taipei",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+      .format(date)
+      .replace(/\//g, "-");
+  }
+
 export default function RainFallPage() {
   const [image, setImage] = useState(null);
   const [error, setError] = useState("");
@@ -177,9 +208,8 @@ export default function RainFallPage() {
         <div className="rainfall-monitoring-header">
           <div>
             <h3 id="rainfall-monitoring-heading">Real-time Rainfall Monitoring</h3>
-            <p>Top 10 rainfall observation stations from CWA Open Data.</p>
           </div>
-          {rainfallTop?.fetched_at ? <p>Data fetched: {rainfallTop.fetched_at}</p> : null}
+          {rainfallTop?.fetched_at ? <p>Data fetched: {formatDateTimeTaiwan(rainfallTop.fetched_at)}</p> : null}
         </div>
         <div className="image-tabs rainfall-metric-tabs" role="tablist" aria-label="Rainfall ranking metric">
           {rainfallMetrics.map((metric) => (
@@ -206,9 +236,9 @@ export default function RainFallPage() {
                 <thead>
                   <tr>
                     <th>Rank</th>
-                    <th>Station</th>
                     <th>County</th>
                     <th>Town</th>
+                    <th>Station</th>
                     <th>Rainfall</th>
                     <th>Observed At</th>
                   </tr>
@@ -217,11 +247,11 @@ export default function RainFallPage() {
                   {rainfallTop.items.map((item) => (
                     <tr key={`${item.station_id}-${item.observed_at}`}>
                       <td>{item.rank}</td>
-                      <td>{item.station_name}</td>
                       <td>{item.county || "-"}</td>
                       <td>{item.town || "-"}</td>
+                      <td>{item.station_name}</td>
                       <td>{Number(item.rainfall).toFixed(1)} mm</td>
-                      <td>{item.observed_at}</td>
+                      <td>{formatObservedAt(item.observed_at)}</td>
                     </tr>
                   ))}
                 </tbody>
