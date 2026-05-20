@@ -537,6 +537,221 @@ nav a {
   color: #c83a4d;
 }
 
+.status-page {
+  display: grid;
+  gap: 18px;
+}
+
+.status-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.status-page-header h2,
+.status-page-header p,
+.status-generated-at {
+  margin: 0;
+}
+
+.status-page-header h2 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  line-height: 1.15;
+}
+
+.status-page-header p {
+  margin-top: 8px;
+  color: #54627f;
+  line-height: 1.55;
+}
+
+.status-generated-at {
+  color: #4f5d78;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.status-table-panel,
+.status-empty-state {
+  border: 1px solid #d4dcec;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 14px 32px rgba(23, 32, 51, 0.07);
+}
+
+.status-table-wrap {
+  overflow-x: auto;
+}
+
+.status-table {
+  width: 100%;
+  min-width: 1540px;
+  border-collapse: collapse;
+}
+
+.status-table th,
+.status-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e3e9f5;
+  text-align: left;
+}
+
+.status-table th {
+  background: #f6f8fc;
+  color: #4f5d78;
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-sort-button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  padding: 4px 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.status-sort-button:hover {
+  color: #0f6bdc;
+}
+
+.status-sort-button:focus-visible {
+  outline: 3px solid rgba(15, 107, 220, 0.28);
+  outline-offset: 2px;
+}
+
+.status-refresh-button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #0f6bdc;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-refresh-button:hover:not(:disabled) {
+  background: #0b58b8;
+}
+
+.status-refresh-button:focus-visible {
+  outline: 3px solid rgba(15, 107, 220, 0.28);
+  outline-offset: 2px;
+}
+
+.status-refresh-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.status-action-empty {
+  color: #66748f;
+}
+
+.status-table {
+  table-layout: fixed;
+}
+
+.status-table th {
+  text-align: center;
+}
+
+.status-table-th-narrow {
+  width: 60px;
+}
+
+.status-table td {
+  color: #172033;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.status-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.status-type-cell {
+  width: 100px;
+  max-width: 100px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.status-long-cell {
+  min-width: 220px;
+}
+
+.status-url-cell {
+  max-width: 280px;
+  overflow-wrap: anywhere;
+  color: #2858a7;
+}
+
+.status-note-cell {
+  min-width: 260px;
+  color: #5b6882;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-badge-fresh {
+  background: #dff5e7;
+  color: #17683a;
+}
+
+.status-badge-stale {
+  background: #ffe7df;
+  color: #a13b1f;
+}
+
+.status-badge-empty {
+  background: #edf1f7;
+  color: #526079;
+}
+
+.status-badge-unknown {
+  background: #fff3da;
+  color: #8a5a00;
+}
+
+.status-empty-state {
+  display: grid;
+  gap: 8px;
+  min-height: 240px;
+  align-content: center;
+  justify-items: center;
+  padding: 28px;
+  text-align: center;
+  color: #5b6882;
+}
+
+.status-empty-state h3 {
+  margin: 0;
+  color: #172033;
+}
+
 .faq-page {
   display: grid;
   gap: 22px;
@@ -967,6 +1182,7 @@ nav a {
   }
 
   .faq-page-header,
+  .status-page-header,
   .faq-layout,
   .faq-search,
   .faq-category-header,
@@ -978,6 +1194,10 @@ nav a {
 
   .faq-layout {
     display: grid;
+  }
+
+  .status-generated-at {
+    white-space: normal;
   }
 
   .faq-card-list {

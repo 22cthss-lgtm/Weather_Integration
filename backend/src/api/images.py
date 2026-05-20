@@ -28,6 +28,7 @@ from ..models.image_repository import (
     get_latest_image_by_image_time,
     get_latest_image_excluding_prefixes,
 )
+from ..services.status_service import build_image_status_summaries
 
 
 images_bp = Blueprint("images", __name__)
@@ -72,6 +73,36 @@ grouped_image_types = {
         "cimss_steering_flow_200_700mb",
     ],
 }
+REFRESH_IMAGE_FETCHERS = {
+    "radar": "fetch_radar_image",
+    "satellite": "fetch_satellite_image",
+    "temperature": "fetch_temperature_image",
+    "rainfall": "fetch_rainfall_image",
+}
+
+
+@images_bp.get("/status")
+def image_status():
+    return jsonify(build_image_status_summaries())
+
+
+@images_bp.post("/refresh")
+def refresh_image():
+    image_type = request.args.get("type", "").strip()
+    if not image_type:
+        return jsonify({"error": "Query parameter 'type' is required."}), 400
+
+    fetcher_name = REFRESH_IMAGE_FETCHERS.get(image_type)
+    if fetcher_name is None:
+        return jsonify({"error": "Refresh is not supported for this image type."}), 400
+
+    try:
+        fetcher = globals()[fetcher_name]
+        fetcher()
+    except Exception:
+        return jsonify({"error": f"Failed to refresh {image_type} image."}), 502
+
+    return jsonify({"image_type": image_type, "status": "refreshed"})
 
 
 def parse_fetched_at(fetched_at: str | None) -> datetime | None:

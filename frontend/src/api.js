@@ -55,6 +55,19 @@ export async function fetchRainfallTop(metric = "10min") {
   return parseJson(response, `Failed to fetch rainfall top ranking for ${metric}`);
 }
 
+export async function fetchImageStatus() {
+  const response = await fetch(`${API_BASE_URL}/api/images/status`);
+  return parseJson(response, "Failed to fetch image status");
+}
+
+export async function refreshImage(type) {
+  const params = new URLSearchParams({ type });
+  const response = await fetch(`${API_BASE_URL}/api/images/refresh?${params.toString()}`, {
+    method: "POST",
+  });
+  return parseJson(response, `Failed to refresh ${type}`);
+}
+
 async function parseJson(response, fallbackMessage) {
   let payload = null;
 

@@ -22,8 +22,8 @@ RAINFALL_OBSERVATION_TTL_MINUTES = 11
 
 DEFAULT_IMAGE_TTL_MINUTES = 24 * 60
 IMAGE_TYPE_TTL_MINUTES = {
-    "radar": 10,
-    "satellite": 10,
+    "radar": 15,
+    "satellite": 15,
     "temperature": 60,
     "rainfall": 30,
     "weather_chart": 12 * 60,
@@ -38,4 +38,12 @@ IMAGE_TYPE_TTL_MINUTES = {
     "cimss_steering_flow_300_850mb": 3 * 60,
     "cimss_steering_flow_250_850mb": 3 * 60,
     "cimss_steering_flow_200_700mb": 3 * 60,
+    "sst": 24 * 60,
+    "tchp": 24 *60,
+    "seaice_arctic_extent": 24 * 60,
+    "seaice_arctic_concentration": 24 * 60,
+    "seaice_arctic_timeseries": 24 * 60,
+    "seaice_antarctic_extent": 24 * 60,
+    "seaice_antarctic_concentration": 24 * 60,
+    "seaice_antarctic_timeseries": 24 * 60,
 }

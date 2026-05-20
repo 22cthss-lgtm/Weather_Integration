@@ -62,14 +62,14 @@ class LatestSatelliteAndRadarApiTests(unittest.TestCase):
         self.assertEqual(response.json["image_time"], "2026-05-12 16:00")
         mock_fetch.assert_not_called()
 
-    def test_latest_satellite_fetches_when_latest_record_exceeds_ten_minute_ttl(self):
+    def test_latest_satellite_fetches_when_latest_record_exceeds_configured_ttl(self):
         insert_image(
             image_type="satellite",
             source="CWA",
             title="CWA Color Satellite Cloud 2026-05-12 16:00",
             image_url="https://www.cwa.gov.tw/Data/satellite/LCC_IR1_CR_2750/LCC_IR1_CR_2750-2026-05-12-16-00.jpg",
             source_url="https://www.cwa.gov.tw/V8/C/W/OBS_Sat.html",
-            fetched_at=(datetime.now(timezone.utc) - timedelta(minutes=11)).isoformat(),
+            fetched_at=(datetime.now(timezone.utc) - timedelta(minutes=16)).isoformat(),
         )
 
         with patch("src.api.images.fetch_satellite_image") as mock_fetch:

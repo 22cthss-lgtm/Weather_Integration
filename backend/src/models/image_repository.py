@@ -172,3 +172,50 @@ def get_image_history_by_date(image_type: str, image_date: str) -> list[dict[str
         seen_image_times.add(row_image_time)
         history.append(image)
     return history
+
+
+def get_image_status_rows(image_type: str, today_start: str, last_24h_start: str) -> dict[str, Any]:
+    with get_connection() as conn:
+        summary_row = conn.execute(
+            """
+            SELECT
+                COUNT(*) AS total_records,
+                SUM(CASE WHEN fetched_at >= ? THEN 1 ELSE 0 END) AS added_today,
+                SUM(CASE WHEN fetched_at >= ? THEN 1 ELSE 0 END) AS added_last_24h
+            FROM images
+            WHERE image_type = ?
+            """,
+            (today_start, last_24h_start, image_type),
+        ).fetchone()
+        latest_rows = conn.execute(
+            """
+            SELECT *
+            FROM images
+            WHERE image_type = ?
+            ORDER BY fetched_at DESC, id DESC
+            LIMIT 2
+            """,
+            (image_type,),
+        ).fetchall()
+        duplicate_row = conn.execute(
+            """
+            SELECT COALESCE(SUM(url_count - 1), 0) AS duplicate_count
+            FROM (
+                SELECT image_url, COUNT(*) AS url_count
+                FROM images
+                WHERE image_type = ? AND image_url IS NOT NULL AND image_url != ''
+                GROUP BY image_url
+                HAVING COUNT(*) > 1
+            )
+            """,
+            (image_type,),
+        ).fetchone()
+
+    return {
+        "total_records": summary_row["total_records"] if summary_row else 0,
+        "added_today": summary_row["added_today"] if summary_row and summary_row["added_today"] else 0,
+        "added_last_24h": summary_row["added_last_24h"] if summary_row and summary_row["added_last_24h"] else 0,
+        "latest": dict(latest_rows[0]) if latest_rows else None,
+        "previous": dict(latest_rows[1]) if len(latest_rows) > 1 else None,
+        "possible_duplicate_count": duplicate_row["duplicate_count"] if duplicate_row else 0,
+    }

@@ -6,6 +6,7 @@ import ImagePage from "./pages/ImagePage";
 import SeaIcePage from "./pages/SeaIcePage";
 import CimssPage from "./pages/CimssPage";
 import RainFallPage from "./pages/RainFallPage";
+import StatusPage from "./pages/StatusPage";
 
 export default function App() {
   const [faqResetToken, setFaqResetToken] = useState(0);
@@ -23,6 +24,7 @@ export default function App() {
           <Link to="/faq" onClick={() => setFaqResetToken((current) => current + 1)}>
             FAQ
           </Link>
+          <Link to="/status">Status</Link>
         </nav>
       </header>
       <main>
@@ -35,6 +37,7 @@ export default function App() {
           <Route path="/images/rainfall" element={<RainFallPage />} />
           <Route path="/images/:type" element={<ImagePage />} />
           <Route path="/faq" element={<FaqPage resetToken={faqResetToken} />} />
+          <Route path="/status" element={<StatusPage />} />
         </Routes>
       </main>
     </div>
