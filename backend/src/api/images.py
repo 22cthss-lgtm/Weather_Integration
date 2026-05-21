@@ -8,6 +8,7 @@ from ..jobs import (
     fetch_cimss_steering_flow_images,
     fetch_cimss_wind_analysis_images,
     fetch_850hpa_image,
+    backfill_radar_images,
     backfill_rainfall_images,
     rainfall_daily_representative_slots,
     fetch_radar_image,
@@ -359,8 +360,13 @@ def daily_images():
 @images_bp.post("/backfill")
 def backfill_images():
     image_type = request.args.get("type", "").strip()
-    if image_type != "rainfall":
-        return jsonify({"error": "Backfill is only supported for rainfall."}), 400
+    backfill_fetchers = {
+        "radar": backfill_radar_images,
+        "rainfall": backfill_rainfall_images,
+    }
+    backfill_fetcher = backfill_fetchers.get(image_type)
+    if backfill_fetcher is None:
+        return jsonify({"error": "Backfill is only supported for radar and rainfall."}), 400
 
     range_name = request.args.get("range", "today").strip() or "today"
     image_date = request.args.get("date", "").strip()
@@ -375,7 +381,7 @@ def backfill_images():
         return jsonify({"error": "Only range=today or date=YYYY-MM-DD is supported."}), 400
 
     try:
-        summary = backfill_rainfall_images(range_name=range_name, image_date=parsed_date)
+        summary = backfill_fetcher(range_name=range_name, image_date=parsed_date)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 

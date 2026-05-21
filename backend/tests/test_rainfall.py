@@ -328,11 +328,11 @@ class LatestRainfallApiTests(unittest.TestCase):
         self.assertEqual(response.json[0]["label"], "Yesterday Full-Day Rainfall")
         self.assertEqual(response.json[0]["represented_date"], "2026-05-12")
 
-    def test_backfill_endpoint_rejects_non_rainfall_type(self):
-        response = self.client.post("/api/images/backfill?type=radar&range=today")
+    def test_backfill_endpoint_rejects_unsupported_type(self):
+        response = self.client.post("/api/images/backfill?type=satellite&range=today")
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json["error"], "Backfill is only supported for rainfall.")
+        self.assertEqual(response.json["error"], "Backfill is only supported for radar and rainfall.")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -8,7 +8,30 @@ from flask import Flask
 
 from src.api.images import images_bp
 from src.db import init_db
+from src.jobs import backfill_radar_images
 from src.models.image_repository import insert_image
+from src.services.cwa_service import CWAService
+
+
+class CWAServiceRadarTests(unittest.TestCase):
+    def test_build_radar_image_url_uses_cwa_timestamp_pattern(self):
+        image_time = datetime(2026, 5, 21, 17, 0, tzinfo=CWAService.satellite_timezone)
+
+        image_url = CWAService().build_radar_image_url(image_time)
+
+        self.assertEqual(
+            image_url,
+            "https://www.cwa.gov.tw/Data/radar/CV1_3600_202605211700.png",
+        )
+
+    def test_radar_time_slots_for_today_stop_at_latest_publishable_ten_minutes(self):
+        now = datetime(2026, 5, 21, 17, 24, tzinfo=CWAService.satellite_timezone)
+
+        slots = CWAService().radar_time_slots_for_date(date(2026, 5, 21), now=now)
+
+        self.assertEqual(slots[0].strftime("%Y-%m-%d %H:%M"), "2026-05-21 00:00")
+        self.assertEqual(slots[-1].strftime("%Y-%m-%d %H:%M"), "2026-05-21 17:00")
+        self.assertEqual(len(slots), 103)
 
 
 class LatestSatelliteAndRadarApiTests(unittest.TestCase):
@@ -94,6 +117,55 @@ class LatestSatelliteAndRadarApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["image_time"], "2026-04-14 23:50")
         mock_fetch.assert_called_once_with()
+
+    def test_backfill_radar_today_inserts_available_missing_slots(self):
+        insert_image(
+            image_type="radar",
+            source="CWA",
+            title="CWA Radar Echo 2026-05-21 00:00",
+            image_url="https://www.cwa.gov.tw/Data/radar/CV1_3600_202605210000.png",
+            source_url="https://www.cwa.gov.tw/V8/C/W/OBS_Radar.html",
+            fetched_at="2026-05-20T16:05:00+00:00",
+            image_time="2026-05-21 00:00",
+        )
+        now = datetime(2026, 5, 21, 0, 34, tzinfo=CWAService.satellite_timezone)
+
+        def image_exists(image_url):
+            return image_url.endswith("202605210010.png") or image_url.endswith("202605210030.png")
+
+        with patch.object(CWAService, "image_exists", side_effect=image_exists):
+            summary = backfill_radar_images(range_name="today", now=now)
+
+        self.assertEqual(summary["requested"], 2)
+        self.assertEqual(summary["inserted"], 1)
+        self.assertEqual(summary["skipped_existing"], 1)
+        self.assertEqual(summary["missing"], 0)
+        self.assertEqual(summary["failed"], 0)
+
+        response = self.client.get("/api/images/history?type=radar&date=2026-05-21")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [entry["image_time"] for entry in response.json],
+            ["2026-05-21 00:00", "2026-05-21 00:10"],
+        )
+
+    def test_backfill_endpoint_accepts_radar_type(self):
+        with patch("src.api.images.backfill_radar_images") as mock_backfill:
+            mock_backfill.return_value = {
+                "image_type": "radar",
+                "date": "2026-05-21",
+                "requested": 0,
+                "inserted": 0,
+                "skipped_existing": 0,
+                "missing": 0,
+                "failed": 0,
+            }
+
+            response = self.client.post("/api/images/backfill?type=radar&range=today")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["image_type"], "radar")
+        mock_backfill.assert_called_once_with(range_name="today", image_date=None)
 
 
 if __name__ == "__main__":

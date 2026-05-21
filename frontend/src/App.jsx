@@ -6,6 +6,8 @@ import ImagePage from "./pages/ImagePage";
 import SeaIcePage from "./pages/SeaIcePage";
 import CimssPage from "./pages/CimssPage";
 import RainFallPage from "./pages/RainFallPage";
+import RadarPage from "./pages/RadarPage";
+import SatellitePage from "./pages/SatellitePage";
 import StatusPage from "./pages/StatusPage";
 
 export default function App() {
@@ -35,6 +37,8 @@ export default function App() {
           <Route path="/images/cimss_wind_analysis" element={<CimssPage type="cimss_wind_analysis" />} />
           <Route path="/images/cimss_steering_flow" element={<CimssPage type="cimss_steering_flow" />} />
           <Route path="/images/rainfall" element={<RainFallPage />} />
+          <Route path="/images/radar" element={<RadarPage />} />
+          <Route path="/images/satellite" element={<SatellitePage />} />
           <Route path="/images/:type" element={<ImagePage />} />
           <Route path="/faq" element={<FaqPage resetToken={faqResetToken} />} />
           <Route path="/status" element={<StatusPage />} />

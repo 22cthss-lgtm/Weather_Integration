@@ -46,6 +46,7 @@ class CWAService(BaseImageService):
     satellite_timezone = ZoneInfo("Asia/Taipei")
     satellite_publish_delay_minutes = 30
     radar_publish_delay_minutes = 20
+    radar_slot_minutes = 10
     temperature_publish_delay_minutes = 20
     rainfall_publish_delay_minutes = 20
     rainfall_slot_minutes = 30
@@ -166,6 +167,36 @@ class CWAService(BaseImageService):
             image_url,
             self.radar_source_url,
         )
+
+    def build_radar_image_url(self, image_time: datetime) -> str:
+        timestamp = image_time.astimezone(self.satellite_timezone).strftime("%Y%m%d%H%M")
+        filename = self.radar_image_pattern.format(timestamp=timestamp)
+        return f"{self.radar_image_prefix}/{filename}"
+
+    def radar_time_slots_for_date(self, image_date: date, now: datetime | None = None) -> list[datetime]:
+        current_time = now or datetime.now(self.satellite_timezone)
+        current_time = current_time.astimezone(self.satellite_timezone).replace(second=0, microsecond=0)
+        start = datetime.combine(image_date, datetime.min.time(), tzinfo=self.satellite_timezone)
+        end = datetime.combine(image_date, datetime.max.time(), tzinfo=self.satellite_timezone).replace(
+            second=0,
+            microsecond=0,
+        )
+
+        if image_date == current_time.date():
+            publishable_time = current_time - timedelta(minutes=self.radar_publish_delay_minutes)
+            end = publishable_time - timedelta(minutes=publishable_time.minute % self.radar_slot_minutes)
+        elif image_date > current_time.date():
+            return []
+
+        if end < start:
+            return []
+
+        slots = []
+        candidate_time = start
+        while candidate_time <= end:
+            slots.append(candidate_time)
+            candidate_time += timedelta(minutes=self.radar_slot_minutes)
+        return slots
 
     def resolve_temperature_image_url(self) -> tuple[str, str] | None:
         try:
