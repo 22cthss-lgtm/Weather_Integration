@@ -55,7 +55,7 @@ class RainfallObservationParsingTests(unittest.TestCase):
                             "Past10Min": {"Precipitation": "1.5"},
                             "Past1hr": {"Precipitation": "12.0"},
                             "Past3hr": {"Precipitation": "X"},
-                            "Past6hr": {"Precipitation": "-99"},
+                            "Past6Hr": {"Precipitation": "18.0"},
                             "Past12hr": {"Precipitation": "25.0"},
                             "Past24hr": {"Precipitation": "64.5"},
                             "Past2days": {"Precipitation": "88.0"},
@@ -78,7 +78,7 @@ class RainfallObservationParsingTests(unittest.TestCase):
         self.assertEqual(observation["rain_10min"], 1.5)
         self.assertEqual(observation["rain_1hr"], 12.0)
         self.assertIsNone(observation["rain_3hr"])
-        self.assertIsNone(observation["rain_6hr"])
+        self.assertEqual(observation["rain_6hr"], 18.0)
         self.assertEqual(observation["rain_12hr"], 25.0)
         self.assertEqual(observation["rain_24hr"], 64.5)
         self.assertEqual(observation["rain_today"], 28.5)

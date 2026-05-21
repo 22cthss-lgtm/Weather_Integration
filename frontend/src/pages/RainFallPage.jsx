@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { backfillImages, fetchDailyImages, fetchImageHistory, fetchLatestImage, fetchRainfallTop } from "../api";
 
 const rainfallMetrics = [
-  { key: "10min", label: "10min" },
-  { key: "1hr", label: "1hr" },
-  { key: "3hr", label: "3hr" },
-  { key: "6hr", label: "6hr" },
-  { key: "12hr", label: "12hr" },
-  { key: "24hr", label: "24hr" },
-  { key: "1day", label: "Previous 1 Day" },
-  { key: "2days", label: "Previous 2 Days" },
+  { key: "10min", label: "10 Min" },
+  { key: "1hr", label: "1 Hr" },
+  { key: "3hr", label: "3 Hr" },
+  { key: "6hr", label: "6 Hr" },
+  { key: "12hr", label: "12 Hr" },
+  { key: "24hr", label: "24 Hr" },
+  { key: "1day", label: "Since Yesterday" },
+  { key: "2days", label: "Since 2 Days Ago" },
 ];
 
 function getImageDate(entry) {
@@ -208,8 +208,8 @@ export default function RainFallPage() {
         <div className="rainfall-monitoring-header">
           <div>
             <h3 id="rainfall-monitoring-heading">Real-time Rainfall Monitoring</h3>
+            {rainfallTop?.fetched_at ? <p style={{marginTop: 18}}>Data fetched: {formatDateTimeTaiwan(rainfallTop.fetched_at)}</p> : null}
           </div>
-          {rainfallTop?.fetched_at ? <p>Data fetched: {formatDateTimeTaiwan(rainfallTop.fetched_at)}</p> : null}
         </div>
         <div className="image-tabs rainfall-metric-tabs" role="tablist" aria-label="Rainfall ranking metric">
           {rainfallMetrics.map((metric) => (

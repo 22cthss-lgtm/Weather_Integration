@@ -81,7 +81,7 @@ def parse_cwa_rainfall_response(payload: dict[str, Any], fetched_at: str | None 
                 "rain_10min": parse_rainfall_number(nested_value(rainfall, "Past10Min", "Precipitation")),
                 "rain_1hr": parse_rainfall_number(nested_value(rainfall, "Past1hr", "Precipitation")),
                 "rain_3hr": parse_rainfall_number(nested_value(rainfall, "Past3hr", "Precipitation")),
-                "rain_6hr": parse_rainfall_number(nested_value(rainfall, "Past6hr", "Precipitation")),
+                "rain_6hr": parse_rainfall_number(nested_value(rainfall, "Past6Hr", "Precipitation")),
                 "rain_12hr": parse_rainfall_number(nested_value(rainfall, "Past12hr", "Precipitation")),
                 "rain_24hr": parse_rainfall_number(nested_value(rainfall, "Past24hr", "Precipitation")),
                 "rain_today": parse_rainfall_number(nested_value(rainfall, "Now", "Precipitation")),
