@@ -31,6 +31,59 @@ def fetch_all_images() -> None:
 def fetch_satellite_image() -> None:
     save_payloads(CWAService().fetch_satellite())
 
+def backfill_satellite_images(
+    *,
+    range_name: str = "today",
+    image_date: date | None = None,
+    now: datetime | None = None,
+) -> dict:
+    service = CWAService()
+    current_time = now or datetime.now(service.satellite_timezone)
+    target_date = image_date or current_time.astimezone(service.satellite_timezone).date()
+
+    if range_name != "today" and image_date is None:
+        raise ValueError("Only range=today or an explicit date is supported.")
+
+    slots = service.satellite_time_slots_for_date(target_date, now=current_time)
+    summary = {
+        "image_type": "satellite",
+        "date": target_date.isoformat(),
+        "requested": len(slots),
+        "inserted": 0,
+        "skipped_existing": 0,
+        "missing": 0,
+        "failed": 0,
+    }
+
+    for slot in slots:
+        image_time = slot.strftime("%Y-%m-%d %H:%M")
+        image_url = service.build_satellite_image_url(slot)
+        if get_image_by_image_time("satellite", image_time) or get_image_by_url("satellite", image_url):
+            summary["skipped_existing"] += 1
+            continue
+
+        try:
+            exists = service.image_exists(image_url)
+        except Exception:
+            summary["failed"] += 1
+            continue
+
+        if not exists:
+            summary["missing"] += 1
+            continue
+
+        insert_image(
+            image_type="satellite",
+            source=service.source_name,
+            title=f"CWA Color Satellite Cloud {image_time}",
+            image_url=image_url,
+            source_url=service.satellite_source_url,
+            fetched_at=datetime.now(timezone.utc).isoformat(),
+            image_time=image_time,
+        )
+        summary["inserted"] += 1
+
+    return summary
 
 def fetch_radar_image() -> None:
     save_payloads(CWAService().fetch_radar())

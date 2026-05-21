@@ -82,9 +82,9 @@ export default function RadarPage() {
         <p>Source: {selectedRadar.source}</p>
         <p>{selectedRadar.image_time ? `Image Time: ${selectedRadar.image_time}` : `Fetched At: ${selectedRadar.fetched_at}`}</p>
       </div>
-      <div className="radar-detail-layout">
-        <div className="radar-controls">
-          <label className="radar-time-select">
+      <div className="detail-layout">
+        <div className="controls">
+          <label className="time-select">
             <span>Today Available Radar Images</span>
             <select
               value={selectedRadarTime}
@@ -99,23 +99,23 @@ export default function RadarPage() {
             </select>
           </label>
           <button
-            className="primary-button radar-backfill-button"
+            className="primary-button backfill-button"
             type="button"
             onClick={handleBackfillRadar}
             disabled={isBackfilling}
           >
             {isBackfilling ? "Backfilling..." : "Backfill Images"}
           </button>
-          <p className="status-message radar-status" aria-live="polite">
+          <p className="status-message status" aria-live="polite">
             {backfillMessage || (radarHistory.length ? `${radarHistory.length} images available for this date.` : "No radar history loaded.")}
           </p>
-          <p className="radar-source-link">
+          <p className="source-link">
             <a href={selectedRadar.source_url} target="_blank" rel="noreferrer">
               Original source
             </a>
           </p>
         </div>
-        <img className="detail-image radar-detail-image" src={selectedRadar.image_url} alt={selectedRadar.title} />
+        <img className="detail-image cwa-detail-image" src={selectedRadar.image_url} alt={selectedRadar.title} />
       </div>
     </section>
   );

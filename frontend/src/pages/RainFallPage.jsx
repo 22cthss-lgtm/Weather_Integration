@@ -157,9 +157,9 @@ export default function RainFallPage() {
         <p>Source: {selectedRainfall.source}</p>
         <p>{selectedRainfall.image_time ? `Image Time: ${selectedRainfall.image_time}` : `Fetched At: ${selectedRainfall.fetched_at}`}</p>
       </div>
-      <div className="rainfall-detail-layout">
-        <div className="rainfall-controls">
-          <label className="rainfall-time-select">
+      <div className="detail-layout">
+        <div className="controls">
+          <label className="time-select">
             <span>Today Available Rainfall Images</span>
             <select
               value={selectedRainfallTime}
@@ -174,23 +174,23 @@ export default function RainFallPage() {
             </select>
           </label>
           <button
-            className="primary-button rainfall-backfill-button"
+            className="primary-button backfill-button"
             type="button"
             onClick={handleBackfillRainfall}
             disabled={isBackfilling}
           >
             {isBackfilling ? "Backfilling..." : "Backfill Images"}
           </button>
-          <p className="status-message rainfall-status" aria-live="polite">
+          <p className="status-message status" aria-live="polite">
             {backfillMessage || (rainfallHistory.length ? `${rainfallHistory.length} images available for this date.` : "No rainfall history loaded.")}
           </p>
-          <p className="rainfall-source-link">
+          <p className="source-link">
             <a href={selectedRainfall.source_url} target="_blank" rel="noreferrer">
               Original source
             </a>
           </p>
         </div>
-        <img className="detail-image rainfall-detail-image" src={selectedRainfall.image_url} alt={selectedRainfall.title} />
+        <img className="detail-image cwa-detail-image" src={selectedRainfall.image_url} alt={selectedRainfall.title} />
         {rainfallDailyImages.length ? (
           <section className="rainfall-daily-section" aria-label="Daily rainfall representatives">
             <div className="rainfall-daily-grid">

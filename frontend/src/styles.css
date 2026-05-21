@@ -310,7 +310,7 @@ nav a {
   justify-self: center;
 }
 
-.rainfall-detail-layout {
+.detail-layout {
   display: grid;
   grid-template-columns: minmax(200px, 240px) minmax(0, 1.35fr) minmax(300px, 360px);
   align-items: start;
@@ -318,20 +318,20 @@ nav a {
   margin: 12px 0 0;
 }
 
-.rainfall-controls {
+.controls {
   display: grid;
   gap: 12px;
   align-content: start;
 }
 
-.rainfall-time-select {
+.time-select {
   display: grid;
   gap: 8px;
   color: #4f5d78;
   font-weight: 600;
 }
 
-.rainfall-time-select select {
+.time-select select {
   min-height: 44px;
   box-sizing: border-box;
   border: 1px solid #ccd6ea;
@@ -342,39 +342,20 @@ nav a {
   font: inherit;
 }
 
-.rainfall-time-select select:focus {
+.time-select select:focus {
   border-color: #0f6bdc;
   outline: 3px solid rgba(15, 107, 220, 0.16);
 }
 
-.rainfall-backfill-button {
-  min-height: 44px;
-}
-
-.rainfall-backfill-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.62;
-}
-
-.rainfall-status {
+.status {
   margin: 0;
   line-height: 1.5;
 }
 
-.rainfall-source-link {
+.source-link {
   margin: 0;
   color: #2858a7;
   font-weight: 600;
-}
-
-.rainfall-detail-image {
-  display: block;
-  align-self: stretch;
-  justify-self: center;
-  width: auto;
-  max-width: 100%;
-  height: 75%;
-  object-fit: contain;
 }
 
 .rainfall-daily-section {
@@ -507,48 +488,28 @@ nav a {
 .rainfall-ranking-table tr:last-child td {
   border-bottom: 0;
 }
-.radar-detail-layout {
-  display: grid;
-  grid-template-columns: minmax(200px, 240px) minmax(0, 1.35fr) minmax(300px, 360px);
-  align-items: start;
-  gap: 24px;
-  margin: 12px 0 0;
-}
 
-.radar-controls {
-  display: grid;
-  gap: 12px;
-  align-content: start;
-}
-
-.radar-time-select {
-  display: grid;
-  gap: 8px;
-  color: #4f5d78;
-  font-weight: 600;
-}
-
-.radar-backfill-button {
+.backfill-button {
   min-height: 44px;
 }
 
-.radar-backfill-button:disabled {
+.backfill-button:disabled {
   cursor: not-allowed;
   opacity: 0.62;
 }
 
-.radar-status {
+.status {
   margin: 0;
   line-height: 1.5;
 }
 
-.radar-source-link {
+.source-link {
   margin: 0;
   color: #2858a7;
   font-weight: 600;
 }
 
-.radar-detail-image {
+.cwa-detail-image {
   display: block;
   align-self: stretch;
   justify-self: center;
@@ -1201,74 +1162,4 @@ nav a {
 .faq-empty-state h3 {
   margin: 0;
   color: #172033;
-}
-
-@media (max-width: 768px) {
-  .dashboard-hero {
-    min-height: 220px;
-    aspect-ratio: 4 / 3;
-    border-radius: 16px;
-  }
-
-  .dashboard-hero-overlay {
-    align-items: flex-end;
-    background: linear-gradient(180deg, rgba(8, 18, 34, 0.12), rgba(8, 18, 34, 0.82));
-  }
-
-  .dashboard-hero-content {
-    gap: 16px;
-  }
-
-  .dashboard-hero-links a {
-    font-size: 0.85rem;
-    padding: 8px 10px;
-  }
-
-  .back-to-top-button {
-    right: 16px;
-    bottom: 16px;
-    width: 44px;
-    height: 44px;
-  }
-
-  .faq-page-header,
-  .status-page-header,
-  .faq-layout,
-  .faq-search,
-  .faq-category-header,
-  .faq-list-header,
-  .faq-detail-header {
-    grid-template-columns: 1fr;
-    flex-direction: column;
-  }
-
-  .faq-layout {
-    display: grid;
-  }
-
-  .status-generated-at {
-    white-space: normal;
-  }
-
-  .faq-card-list {
-    max-height: 500px;
-  }
-
-  .faq-form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .rainfall-detail-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .rainfall-time-select,
-  .rainfall-backfill-button {
-    width: 100%;
-  }
-
-  .rainfall-detail-image {
-    width: 100%;
-    height: auto;
-  }
 }

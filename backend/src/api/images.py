@@ -8,6 +8,7 @@ from ..jobs import (
     fetch_cimss_steering_flow_images,
     fetch_cimss_wind_analysis_images,
     fetch_850hpa_image,
+    backfill_satellite_images,
     backfill_radar_images,
     backfill_rainfall_images,
     rainfall_daily_representative_slots,
@@ -361,12 +362,13 @@ def daily_images():
 def backfill_images():
     image_type = request.args.get("type", "").strip()
     backfill_fetchers = {
+        "satellite": backfill_satellite_images,
         "radar": backfill_radar_images,
         "rainfall": backfill_rainfall_images,
     }
     backfill_fetcher = backfill_fetchers.get(image_type)
     if backfill_fetcher is None:
-        return jsonify({"error": "Backfill is only supported for radar and rainfall."}), 400
+        return jsonify({"error": "Backfill is only supported for satellite, radar and rainfall."}), 400
 
     range_name = request.args.get("range", "today").strip() or "today"
     image_date = request.args.get("date", "").strip()
