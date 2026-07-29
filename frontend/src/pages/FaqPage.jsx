@@ -7,6 +7,9 @@ import {
   fetchFaqs,
   updateFaq,
 } from "../api";
+import FaqRichContent from "../components/FaqRichContent";
+import RichTextEditor from "../components/RichTextEditor/RichTextEditor";
+import { isFaqContentEmpty } from "../utils/faqContent";
 
 const emptyForm = {
   category: "",
@@ -34,6 +37,10 @@ function parseTags(value) {
 function getFormFieldError(fieldName, value) {
   const label = requiredFormFields[fieldName];
   const normalizedValue = String(value || "").trim();
+
+  if (fieldName === "content" && isFaqContentEmpty(value)) {
+    return "* Content is required.";
+  }
 
   if (label && !normalizedValue) {
     return `* ${label} is required.`;
@@ -291,6 +298,17 @@ export default function FaqPage({ resetToken = 0 }) {
       setFormErrors((current) => {
         const nextErrors = { ...current };
         delete nextErrors[name];
+        return nextErrors;
+      });
+    }
+  }
+
+  function handleContentChange(content) {
+    setFormState((current) => ({ ...current, content }));
+    if (formErrors.content && !getFormFieldError("content", content)) {
+      setFormErrors((current) => {
+        const nextErrors = { ...current };
+        delete nextErrors.content;
         return nextErrors;
       });
     }
@@ -606,20 +624,18 @@ export default function FaqPage({ resetToken = 0 }) {
                 />
               </label>
 
-              <label>
+              <div className="faq-content-field">
                 <span className="faq-label-row">
                   Content
                   {formErrors.content ? <span className="faq-field-error-text">{formErrors.content}</span> : null}
                 </span>
-                <textarea
-                  name="content"
+                <RichTextEditor
                   value={formState.content}
-                  onChange={handleFormChange}
-                  rows={14}
-                  placeholder="Type the content"
-                  className={formErrors.content ? "faq-field-error" : ""}
+                  onChange={handleContentChange}
+                  disabled={isSubmitting}
+                  placeholder="Write the FAQ content"
                 />
-              </label>
+              </div>
 
             </form>
           ) : selectedFaq ? (
@@ -661,7 +677,7 @@ export default function FaqPage({ resetToken = 0 }) {
                     </div>
                   ) : null}
 
-                  <pre className="faq-content-text">{selectedFaq.content}</pre>
+                  <FaqRichContent content={selectedFaq.content} />
                 </>
               ) : null}
             </article>

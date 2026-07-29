@@ -15,6 +15,7 @@ load_backend_env()
 
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
+FAQ_UPLOAD_DIR = BASE_DIR / "uploads" / "faq"
 
 DATABASE_PATH = DATA_DIR / "weather.db"
 CWA_API_KEY = os.getenv("CWA_API_KEY", "")

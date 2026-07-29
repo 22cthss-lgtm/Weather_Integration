@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:5000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:5174";
 
 export async function fetchLatestImage(type) {
   const response = await fetch(`${API_BASE_URL}/api/images/latest?type=${encodeURIComponent(type)}`);
@@ -135,4 +135,14 @@ export async function deleteFaq(id) {
     method: "DELETE",
   });
   return parseJson(response, `Failed to delete FAQ ${id}`);
+}
+
+export async function uploadFaqImage(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+  const response = await fetch(`${API_BASE_URL}/api/faqs/images`, {
+    method: "POST",
+    body: formData,
+  });
+  return parseJson(response, "Failed to upload FAQ image");
 }
