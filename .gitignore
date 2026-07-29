@@ -13,6 +13,7 @@ dist/
 .vite/
 
 backend/data/
+backend/uploads/
 Microsoft/
 docs/superpowers/
 
