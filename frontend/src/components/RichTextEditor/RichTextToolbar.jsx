@@ -1,5 +1,8 @@
+import { useState } from "react";
+
 import { FONT_SIZES } from "./FontSize";
 import { normalizeLinkUrl } from "../../utils/faqContent";
+import { getSelectedVerticalAlign } from "./TableControls";
 
 
 function ToolbarButton({ active = false, children, editor, label, onClick, ...props }) {
@@ -20,6 +23,7 @@ function ToolbarButton({ active = false, children, editor, label, onClick, ...pr
 }
 
 export default function RichTextToolbar({ editor, disabled, isUploading, onChooseImage }) {
+  const [isTableMenuOpen, setIsTableMenuOpen] = useState(false);
   if (!editor) return null;
 
   const command = (callback) => () => callback(editor.chain().focus()).run();
@@ -42,6 +46,48 @@ export default function RichTextToolbar({ editor, disabled, isUploading, onChoos
   const clearFormatting = () => {
     editor.chain().focus().unsetAllMarks().clearNodes().unsetTextAlign().run();
   };
+  const isInTable = editor.isActive("table");
+  const currentTableWidth = editor.getAttributes("table").tableWidth || "auto";
+  const currentVerticalAlign = getSelectedVerticalAlign(editor.state);
+  const canRunTableCommand = (commandName) => {
+    if (!isInTable || disabled || !editor.isEditable) return false;
+    return editor.can().chain().focus()[commandName]().run();
+  };
+  const tableActions = [
+    { label: "Insert table", enabled: !isInTable && !disabled && editor.isEditable, run: (chain) => chain.insertTable({ rows: 2, cols: 2, withHeaderRow: true }) },
+    { label: "Add row above", enabled: canRunTableCommand("addRowBefore"), run: (chain) => chain.addRowBefore() },
+    { label: "Add row below", enabled: canRunTableCommand("addRowAfter"), run: (chain) => chain.addRowAfter() },
+    { label: "Delete row", enabled: canRunTableCommand("deleteRow"), run: (chain) => chain.deleteRow() },
+    { label: "Add column left", enabled: canRunTableCommand("addColumnBefore"), run: (chain) => chain.addColumnBefore() },
+    { label: "Add column right", enabled: canRunTableCommand("addColumnAfter"), run: (chain) => chain.addColumnAfter() },
+    { label: "Delete column", enabled: canRunTableCommand("deleteColumn"), run: (chain) => chain.deleteColumn() },
+    { label: "Toggle header row", enabled: canRunTableCommand("toggleHeaderRow"), run: (chain) => chain.toggleHeaderRow() },
+    { label: "Merge cells", enabled: canRunTableCommand("mergeCells"), run: (chain) => chain.mergeCells() },
+    { label: "Split cell", enabled: canRunTableCommand("splitCell"), run: (chain) => chain.splitCell() },
+    { label: "Delete table", enabled: canRunTableCommand("deleteTable"), run: (chain) => chain.deleteTable() },
+    ...[
+      ["auto", "Table width auto"], ["50", "Table width 50%"],
+      ["75", "Table width 75%"], ["100", "Table width 100%"],
+    ].map(([value, label]) => ({
+      label,
+      active: isInTable && currentTableWidth === value,
+      enabled: isInTable && !disabled && editor.isEditable,
+      run: (chain) => chain.setTableWidth(value),
+    })),
+    ...[
+      ["top", "Vertical align top"], ["middle", "Vertical align middle"],
+      ["bottom", "Vertical align bottom"],
+    ].map(([value, label]) => ({
+      label,
+      active: isInTable && currentVerticalAlign === value,
+      enabled: isInTable && !disabled && editor.isEditable,
+      run: (chain) => chain.setCellVerticalAlign(value),
+    })),
+  ];
+  const runTableAction = (action) => {
+    action.run(editor.chain().focus()).run();
+    setIsTableMenuOpen(false);
+  };
 
   return (
     <div className="rte-toolbar" role="toolbar" aria-label="Rich text formatting">
@@ -50,6 +96,39 @@ export default function RichTextToolbar({ editor, disabled, isUploading, onChoos
         <ToolbarButton editor={editor} label="Italic" active={editor.isActive("italic")} onClick={command((chain) => chain.toggleItalic())}><em>I</em></ToolbarButton>
         <ToolbarButton editor={editor} label="Underline" active={editor.isActive("underline")} onClick={command((chain) => chain.toggleUnderline())}><u>U</u></ToolbarButton>
         <ToolbarButton editor={editor} label="Strikethrough" active={editor.isActive("strike")} onClick={command((chain) => chain.toggleStrike())}><s>S</s></ToolbarButton>
+      </div>
+
+      <div className="rte-toolbar-group rte-table-menu">
+        <button
+          type="button"
+          aria-label="Table"
+          aria-expanded={isTableMenuOpen}
+          aria-haspopup="menu"
+          disabled={disabled || !editor.isEditable}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => setIsTableMenuOpen((current) => !current)}
+        >
+          Table
+        </button>
+        {isTableMenuOpen ? (
+          <div className="rte-table-menu-panel" role="menu" aria-label="Table tools">
+            {tableActions.map((action) => (
+              <button
+                type="button"
+                role="menuitem"
+                aria-label={action.label}
+                aria-pressed={Boolean(action.active)}
+                className={action.active ? "is-active" : ""}
+                disabled={!action.enabled}
+                key={action.label}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => runTableAction(action)}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className="rte-toolbar-group">

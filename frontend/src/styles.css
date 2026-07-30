@@ -1363,6 +1363,42 @@ nav a {
   border-radius: 12px;
 }
 
+.faq-rich-content {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.faq-rich-content table {
+  width: auto;
+  max-width: 100%;
+  margin: 16px 0;
+  border-collapse: collapse;
+}
+
+.faq-rich-content table[data-table-width="50"] { width: 50%; }
+.faq-rich-content table[data-table-width="75"] { width: 75%; }
+.faq-rich-content table[data-table-width="100"] { width: 100%; }
+.faq-rich-content td[data-vertical-align="top"],
+.faq-rich-content th[data-vertical-align="top"] { vertical-align: top; }
+.faq-rich-content td[data-vertical-align="middle"],
+.faq-rich-content th[data-vertical-align="middle"] { vertical-align: middle; }
+.faq-rich-content td[data-vertical-align="bottom"],
+.faq-rich-content th[data-vertical-align="bottom"] { vertical-align: bottom; }
+
+.faq-rich-content th,
+.faq-rich-content td {
+  min-width: 120px;
+  padding: 10px 12px;
+  border: 1px solid #9eabc0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.faq-rich-content th {
+  background: #eaf1fb;
+  font-weight: 700;
+}
+
 .faq-empty-state {
   min-height: 320px;
   align-content: center;

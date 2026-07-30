@@ -1,5 +1,6 @@
 from html import unescape
 from html.parser import HTMLParser
+import re
 
 import bleach
 from bleach.css_sanitizer import CSSSanitizer
@@ -8,13 +9,21 @@ from bleach.css_sanitizer import CSSSanitizer
 ALLOWED_TAGS = {
     "a", "blockquote", "br", "code", "em", "h1", "h2", "h3", "h4",
     "h5", "h6", "hr", "img", "li", "ol", "p", "pre", "s", "span",
-    "strong", "u", "ul",
+    "strong", "table", "tbody", "td", "th", "thead", "tr", "u", "ul", "col", "colgroup",
 }
-STYLE_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6", "p", "span"}
+STYLE_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "table", "col"}
 
 
 def _allow_attribute(tag: str, name: str, value: str) -> bool:
     normalized_value = str(value or "").strip().lower()
+    if tag in {"th", "td"} and name in {"colspan", "rowspan"}:
+        return normalized_value.isdigit() and int(normalized_value) > 0
+    if tag == "table" and name == "data-table-width":
+        return normalized_value == "auto" or (
+            normalized_value.isdigit() and 25 <= int(normalized_value) <= 100
+        )
+    if tag in {"th", "td"} and name == "data-vertical-align":
+        return normalized_value in {"top", "middle", "bottom"}
     if name == "style":
         return tag in STYLE_TAGS
     if tag == "a":
@@ -30,7 +39,7 @@ def _allow_attribute(tag: str, name: str, value: str) -> bool:
         return name in {"alt", "title"}
     return False
 CSS_SANITIZER = CSSSanitizer(
-    allowed_css_properties=["background-color", "color", "font-size", "text-align"]
+    allowed_css_properties=["background-color", "color", "font-size", "text-align", "width", "min-width"]
 )
 CLEANER = bleach.Cleaner(
     tags=ALLOWED_TAGS,
@@ -100,7 +109,40 @@ class _VisibleContentParser(HTMLParser):
 def sanitize_faq_content(content: str) -> str:
     remover = _DangerousBlockRemover()
     remover.feed(str(content or ""))
-    return CLEANER.clean("".join(remover.output)).strip()
+    cleaned = CLEANER.clean("".join(remover.output)).strip()
+
+    def filter_style(match):
+        tag, before, style, after = match.groups()
+        allowed = {"width", "min-width"} if tag in {"table", "col"} else {
+            "background-color", "color", "font-size", "text-align"
+        }
+        declarations = []
+        for declaration in style.split(";"):
+            if ":" not in declaration:
+                continue
+            name, value = (part.strip() for part in declaration.split(":", 1))
+            if name not in allowed:
+                continue
+            if name in {"width", "min-width"}:
+                is_pixel_width = bool(re.fullmatch(r"[1-9]\d*px", value))
+                is_table_percentage = (
+                    tag == "table"
+                    and name == "width"
+                    and bool(re.fullmatch(r"\d+%", value))
+                    and 25 <= int(value[:-1]) <= 100
+                )
+                if not is_pixel_width and not is_table_percentage:
+                    continue
+            declarations.append(f"{name}: {value};")
+        style_attribute = f' style="{" ".join(declarations)}"' if declarations else ""
+        return f"<{tag}{before}{style_attribute}{after}>"
+
+    return re.sub(
+        r'<([a-z0-9]+)([^>]*) style="([^"]*)"([^>]*)>',
+        filter_style,
+        cleaned,
+        flags=re.IGNORECASE,
+    )
 
 
 def is_faq_content_empty(content: str) -> bool:

@@ -37,6 +37,50 @@ describe("sanitizeFaqHtml", () => {
     expect(clean).not.toContain("script");
     expect(clean).not.toContain("javascript:");
   });
+
+  it("keeps table structure and safe spans while removing dangerous table HTML", () => {
+    const dirty =
+      '<table onclick="bad()" style="position:fixed"><thead><tr>' +
+      '<th colspan="2" rowspan="1" onerror="bad()">Heading</th></tr></thead>' +
+      '<tbody><tr><td rowspan="2" data-secret="x">A</td><td>B</td></tr>' +
+      '<tr><td colspan="1"><iframe src="https://example.com"></iframe>C' +
+      '<script>alert(1)</script></td></tr></tbody></table>';
+
+    const clean = sanitizeFaqHtml(dirty);
+
+    expect(clean).toContain("<table>");
+    expect(clean).toContain("<thead>");
+    expect(clean).toContain("<tbody>");
+    expect(clean).toContain('<th colspan="2" rowspan="1">Heading</th>');
+    expect(clean).toContain('<td rowspan="2">A</td>');
+    expect(clean).not.toContain("onclick");
+    expect(clean).not.toContain("onerror");
+    expect(clean).not.toContain("data-secret");
+    expect(clean).not.toContain("position");
+    expect(clean).not.toContain("iframe");
+    expect(clean).not.toContain("script");
+  });
+
+  it("keeps controlled table sizing and vertical alignment", () => {
+    const dirty =
+      '<table data-table-width="75" style="width: 75%; position: fixed"><colgroup>' +
+      '<col style="width: 120px; color: red"><col style="min-width: 80px"></colgroup>' +
+      '<tbody><tr><td data-vertical-align="middle">A</td>' +
+      '<td data-vertical-align="sideways" data-secret="x">B</td></tr></tbody></table>';
+
+    const clean = sanitizeFaqHtml(dirty);
+
+    expect(clean).toContain('data-table-width="75"');
+    expect(clean).toContain("width: 75%");
+    expect(clean).toContain("<colgroup>");
+    expect(clean).toContain('style="width: 120px"');
+    expect(clean).toContain('style="min-width: 80px"');
+    expect(clean).toContain('data-vertical-align="middle"');
+    expect(clean).not.toContain("position");
+    expect(clean).not.toContain("color");
+    expect(clean).not.toContain("sideways");
+    expect(clean).not.toContain("data-secret");
+  });
 });
 
 describe("isFaqContentEmpty", () => {

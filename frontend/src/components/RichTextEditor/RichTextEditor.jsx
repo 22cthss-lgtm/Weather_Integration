@@ -5,13 +5,16 @@ import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
 import { Color, FontSize, TextStyle } from "@tiptap/extension-text-style";
+import { TableKit } from "@tiptap/extension-table";
 import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 
 import { uploadFaqImage } from "../../api";
 import { normalizeFaqContent } from "../../utils/faqContent";
+import ResizableTableView from "./ResizableTableView";
 import RichTextToolbar from "./RichTextToolbar";
+import TableControls from "./TableControls";
 import "./RichTextEditor.css";
 
 
@@ -39,6 +42,16 @@ export default function RichTextEditor({
       FontSize,
       Highlight.configure({ multicolor: true }),
       TextAlign.configure({ types: ["heading", "paragraph"], alignments: ["left", "center", "right"] }),
+      TableKit.configure({
+        table: {
+          resizable: true,
+          cellMinWidth: 80,
+          handleWidth: 6,
+          lastColumnResizable: true,
+          View: ResizableTableView,
+        },
+      }),
+      TableControls,
       Placeholder.configure({ placeholder }),
     ],
     content: normalizeFaqContent(value),
