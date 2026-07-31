@@ -155,23 +155,19 @@ The exact internal structure may change as pages, services, routes, and source-s
 ## Screenshots
 Recommended screenshots for the repository:
 1. Main dashboard
+![Main Dashboard](docs/screenshots/dashboard.png)
 2. Taiwan real-time weather overview
+![Taiwan Real-Time Weather Overview](docs/screenshots/taiwan-weather-overview.png)
 3. Rainfall or radar page with manual refresh and backfill controls
+![Rainfall](docs/screenshots/rainfall.png)
 4. CIMSS grouped analysis page
+![CIMSS Grouped Analysis Page](docs/screenshots/cimss.png)
 5. NSIDC sea ice page with tab navigation
+![NSIDC](docs/screenshots/nsidc.png)
 6. FAQ knowledge base
+![FAQ Knowledge Base](docs/screenshots/faq-page.png)
 7. System status page
-
-Screenshots will be added for the following pages:
-
-- Main dashboard
-- Radar and rainfall pages
-- CIMSS analysis pages
-- NSIDC sea ice pages
-- FAQ knowledge base
-- System status page
-
-Additional product screenshots can be placed in a dedicated `docs/screenshots` directory or inside a collapsible section to keep the main README concise.
+![System Status Page](docs/screenshots/status-page.png)
 
 ## Running the Project Locally
 ### Prerequisites
