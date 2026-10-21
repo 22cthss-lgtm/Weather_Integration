@@ -54,15 +54,6 @@ class NSIDCService(BaseImageService):
         except requests.RequestException:
             return None
 
-    def fetch_image_bytes(self, image_url: str) -> bytes:
-        response = self.fetch_image_response(image_url)
-        if response is None:
-            return b""
-        try:
-            return response.content
-        finally:
-            response.close()
-
     def extract_image_time_from_bytes(self, image_bytes: bytes) -> str | None:
         if not image_bytes:
             return None
@@ -106,9 +97,7 @@ class NSIDCService(BaseImageService):
 
         resolved_images: dict[str, dict[str, str]] = {}
         for image_type, image_url in required_urls.items():
-            image_time = self.extract_image_time_from_bytes(self.fetch_image_bytes(image_url))
-            if image_time is None:
-                image_time = self.resolve_image_time(image_url)
+            image_time = self.resolve_image_time(image_url)
             if image_time is None:
                 return None
             resolved_images[image_type] = {

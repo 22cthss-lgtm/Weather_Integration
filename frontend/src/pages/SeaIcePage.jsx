@@ -74,9 +74,14 @@ export default function SeaIcePage({ type }) {
     <section>
       <h2>{collection.heading}</h2>
       <div className="image-meta-row">
-        <p>Source: {image.source}</p>
-        <p>{activeEntry.image_time ? `Image Time: ${activeEntry.image_time}` : `Fetched At: ${activeEntry.fetched_at}`}</p>
+        <p>Source: {image.source}
+          <a className="source-link" href={image.source_url} target="_blank" rel="noreferrer">
+          Original source
+        </a>
+        </p>
       </div>
+      <p>{activeEntry.image_time ? `Image Time: ${activeEntry.image_time}` : `Fetched At: ${activeEntry.fetched_at}`}</p>
+
       <div className="image-tabs" role="tablist" aria-label={`${collection.heading} views`}>
         {collection.tabs.map((tab) => {
           const isActive = activeTab.id === tab.id;
@@ -105,11 +110,6 @@ export default function SeaIcePage({ type }) {
       >
         <img className="detail-image" src={activeEntry.image_url} alt={activeEntry.title} />
       </article>
-      <p>
-        <a href={image.source_url} target="_blank" rel="noreferrer">
-          Original source
-        </a>
-      </p>
     </section>
   );
 }

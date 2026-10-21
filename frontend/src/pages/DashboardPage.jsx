@@ -14,7 +14,7 @@ const categories = [
   { key: "cimss_steering_flow", label: "CIMSS / Steering Flow" },
   { key: "seaice_arctic", label: "NSIDC Arctic Sea Ice Extent" },
   { key: "seaice_antarctic", label: "NSIDC Antarctic Sea Ice Extent" },
-  { key: "sst", label: "SST" },
+  { key: "sst", label: "JMA SST" },
 ];
 
 const categoryMap = Object.fromEntries(categories.map((category) => [category.key, category]));
@@ -50,11 +50,7 @@ export default function DashboardPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function getCardLabel(categoryKey, defaultLabel) {
-    if (categoryKey === "sst") {
-      return "JMA SST";
-    }
-
+  function getCardLabel(defaultLabel) {
     return defaultLabel;
   }
 
@@ -124,7 +120,7 @@ export default function DashboardPage() {
 
                 return (
                   <Link className="card" to={`/images/${category.key}`} key={category.key}>
-                    <h3>{getCardLabel(category.key, category.label)}</h3>
+                    <h3>{getCardLabel(category.label)}</h3>
                     {card ? (
                       <img src={card.image_url} alt={card.title} loading="lazy" decoding="async" />
                     ) : (

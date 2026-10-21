@@ -155,8 +155,11 @@ export default function RainFallPage() {
       <h2>{selectedRainfall.title}</h2>
       <div className="image-meta-row">
         <p>Source: {selectedRainfall.source}</p>
-        <p>{selectedRainfall.image_time ? `Image Time: ${selectedRainfall.image_time}` : `Fetched At: ${selectedRainfall.fetched_at}`}</p>
+        <a className="source-link" href={selectedRainfall.source_url} target="_blank" rel="noreferrer">
+          Original source
+            </a>
       </div>
+      <p>{selectedRainfall.image_time ? `Image Time: ${selectedRainfall.image_time}` : `Fetched At: ${selectedRainfall.fetched_at}`}</p>
       <div className="detail-layout">
         <div className="controls">
           <label className="time-select">
@@ -183,11 +186,6 @@ export default function RainFallPage() {
           </button>
           <p className="status-message status" aria-live="polite">
             {backfillMessage || (rainfallHistory.length ? `${rainfallHistory.length} images available for this date.` : "No rainfall history loaded.")}
-          </p>
-          <p className="source-link">
-            <a href={selectedRainfall.source_url} target="_blank" rel="noreferrer">
-              Original source
-            </a>
           </p>
         </div>
         <img className="detail-image cwa-detail-image" src={selectedRainfall.image_url} alt={selectedRainfall.title} />

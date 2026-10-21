@@ -353,7 +353,8 @@ nav a {
 }
 
 .source-link {
-  margin: 0;
+  /* margin: 0; */
+  margin-left: 20px;
   color: #2858a7;
   font-weight: 600;
 }
@@ -501,12 +502,6 @@ nav a {
 .status {
   margin: 0;
   line-height: 1.5;
-}
-
-.source-link {
-  margin: 0;
-  color: #2858a7;
-  font-weight: 600;
 }
 
 .cwa-detail-image {

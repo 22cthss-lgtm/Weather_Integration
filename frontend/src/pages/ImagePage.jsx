@@ -43,18 +43,26 @@ export default function ImagePage() {
   if (!image) {
     return <p>Loading...</p>;
   }
+  
+  const fetchedAt = new Date(image.fetched_at)
+    .toLocaleString("sv-SE", {
+      timeZone: "Asia/Taipei",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   return (
     <section className={sectionClassName}>
       <h2>{image.title}</h2>
-      <p>Source: {image.source}</p>
-      <p>{image.image_time ? `Image Time: ${image.image_time}` : `Fetched At: ${image.fetched_at}`}</p>
-      <img className="detail-image" src={image.image_url} alt={image.title} />
-      <p>
-        <a href={image.source_url} target="_blank" rel="noreferrer">
-          Original source
-        </a>
+      <p>Source: {image.source}
+        <a className = "source-link" href={image.source_url} target="_blank" rel="noreferrer">
+          Image Original source</a>
       </p>
+      <p>{image.image_time ? `Image Time: ${image.image_time}` : `Fetched At: ${fetchedAt}`}</p>
+      <img className="detail-image" src={image.image_url} alt={image.title} />
     </section>
   );
 }
